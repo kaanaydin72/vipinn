@@ -1,0 +1,341 @@
+/**
+ * Boutique Theme CSS Module
+ * 
+ * Bu CSS modülü butik teması için stil tanımlamalarını içerir.
+ * Benzersiz, sanatsal ve özel bir deneyim sunar.
+ */
+
+.themeContainer {
+  --primary-color: #7e22ce;
+  --secondary-color: #d946ef;
+  --accent-color: #f0abfc;
+  --background-color: #fdf4ff;
+  --dark-background: #581c87;
+  --text-color: #3b0764;
+  --light-text: #fdf4ff;
+  --border-color: #d946ef;
+  --success-color: #10b981;
+  --error-color: #be123c;
+  --warning-color: #fb923c;
+  --info-color: #7e22ce;
+  
+  --font-family: 'Quicksand', sans-serif;
+  --border-radius: 1rem;
+  --box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  
+  font-family: var(--font-family);
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+/* Header */
+.header {
+  background-color: var(--dark-background);
+  color: white;
+  padding: 1.25rem;
+  box-shadow: var(--box-shadow);
+  border-bottom-left-radius: var(--border-radius);
+  border-bottom-right-radius: var(--border-radius);
+}
+
+.headerNav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 1.75rem;
+  font-weight: bold;
+  background: linear-gradient(to right, #d946ef, #f0abfc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: 0.05em;
+}
+
+/* Main Container */
+.mainContainer {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* Cards */
+.card {
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  border: 1px solid #f0abfc;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  transition: transform 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.cardHeader {
+  padding: 1.5rem;
+  border-bottom: 1px solid #f0abfc;
+  background-color: #fdf4ff;
+}
+
+.cardTitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--primary-color);
+  letter-spacing: 0.03em;
+}
+
+.cardContent {
+  padding: 1.5rem;
+}
+
+.cardFooter {
+  padding: 1.5rem;
+  border-top: 1px solid #f0abfc;
+  background-color: #fdf4ff;
+}
+
+/* Buttons */
+.primaryButton {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(126, 34, 206, 0.2);
+}
+
+.primaryButton:hover {
+  background-color: #6b21a8;
+  transform: translateY(-2px);
+}
+
+.secondaryButton {
+  background-color: #fdf4ff;
+  color: var(--primary-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(126, 34, 206, 0.1);
+}
+
+.secondaryButton:hover {
+  background-color: #f5d0fe;
+  transform: translateY(-2px);
+}
+
+/* Form Elements */
+.input {
+  background-color: white;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 0.75rem;
+  width: 100%;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input:focus {
+  border: 1px solid var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(126, 34, 206, 0.3);
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  letter-spacing: 0.03em;
+}
+
+/* Navigation */
+.navbar {
+  background-color: var(--dark-background);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius);
+  margin: 0 1rem 1rem 1rem;
+}
+
+.navLink {
+  color: var(--light-text);
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius);
+  transition: background-color 0.2s, color 0.2s, transform 0.2s;
+  font-weight: 500;
+  margin: 0 0.25rem;
+  display: inline-block;
+}
+
+.navLink:hover {
+  background-color: rgba(240, 171, 252, 0.2);
+  transform: translateY(-1px);
+}
+
+.activeNavLink {
+  background-color: rgba(240, 171, 252, 0.3);
+  color: #f0abfc;
+  font-weight: 600;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 260px;
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  overflow: hidden;
+  margin-right: 1.5rem;
+  border: 1px solid #f0abfc;
+}
+
+.sidebarNav {
+  padding: 1.5rem 1rem;
+}
+
+.sidebarLink {
+  display: block;
+  padding: 0.75rem 1.25rem;
+  color: var(--text-color);
+  text-decoration: none;
+  border-radius: var(--border-radius);
+  margin-bottom: 0.5rem;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.sidebarLink:hover {
+  background-color: #fdf4ff;
+  color: var(--primary-color);
+  transform: translateX(5px);
+}
+
+.activeSidebarLink {
+  background-color: #f5d0fe;
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+/* Footer */
+.footer {
+  background-color: var(--dark-background);
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--light-text);
+  font-size: 0.875rem;
+  border-top-left-radius: var(--border-radius);
+  border-top-right-radius: var(--border-radius);
+  position: relative;
+}
+
+.footer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(to right, #7e22ce, #d946ef, #f0abfc);
+}
+
+/* Hotel card */
+.hotelCard {
+  display: flex;
+  flex-direction: row;
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  border: 1px solid #f0abfc;
+  transition: transform 0.2s;
+}
+
+.hotelCard:hover {
+  transform: translateY(-5px);
+}
+
+.hotelImage {
+  width: 240px;
+  object-fit: cover;
+  transition: all 0.3s;
+}
+
+.hotelCard:hover .hotelImage {
+  filter: brightness(1.1);
+}
+
+.hotelInfo {
+  padding: 1.5rem;
+  flex: 1;
+}
+
+.hotelName {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.03em;
+}
+
+.hotelLocation {
+  color: #6b21a8;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.hotelDescription {
+  margin-bottom: 1.5rem;
+  line-height: 1.7;
+}
+
+.hotelPrice {
+  font-weight: bold;
+  color: var(--primary-color);
+  font-size: 1.25rem;
+  background: linear-gradient(to right, #7e22ce, #d946ef);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: inline-block;
+}
+
+.hotelPrice::after {
+  content: "/gece";
+  font-size: 0.875rem;
+  opacity: 0.8;
+  margin-left: 0.25rem;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  .hotelCard {
+    flex-direction: column;
+  }
+  
+  .hotelImage {
+    width: 100%;
+    height: 200px;
+  }
+  
+  .sidebar {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 1.5rem;
+  }
+}

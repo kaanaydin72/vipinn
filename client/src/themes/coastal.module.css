@@ -1,0 +1,293 @@
+/**
+ * Coastal Theme CSS Module
+ * 
+ * Bu CSS modülü sahil teması için stil tanımlamalarını içerir.
+ * Ferah, deniz temalı ve dinlendirici bir tasarım sağlar.
+ */
+
+.themeContainer {
+  --primary-color: #0891b2;
+  --secondary-color: #7dd3fc;
+  --accent-color: #fbbf24;
+  --background-color: #ecfeff;
+  --text-color: #0c4a6e;
+  --alt-text: #075985;
+  --border-color: #7dd3fc;
+  --success-color: #10b981;
+  --error-color: #ef4444;
+  --warning-color: #fbbf24;
+  --info-color: #0891b2;
+  
+  --font-family: 'Montserrat', sans-serif;
+  --border-radius: 0.5rem;
+  --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  
+  font-family: var(--font-family);
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+/* Header */
+.header {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 1rem;
+  box-shadow: var(--box-shadow);
+  background-image: linear-gradient(to right, #0891b2, #0ea5e9);
+}
+
+.headerNav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  letter-spacing: 0.02em;
+}
+
+/* Main Container */
+.mainContainer {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.25rem;
+}
+
+/* Cards */
+.card {
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  border: 1px solid #bae6fd;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+
+.cardHeader {
+  padding: 1.25rem;
+  border-bottom: 1px solid #bae6fd;
+  background-color: #e0f2fe;
+}
+
+.cardTitle {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+.cardContent {
+  padding: 1.25rem;
+}
+
+.cardFooter {
+  padding: 1.25rem;
+  border-top: 1px solid #bae6fd;
+  background-color: #e0f2fe;
+}
+
+/* Buttons */
+.primaryButton {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 0.6rem 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  background-image: linear-gradient(to right, #0891b2, #0ea5e9);
+}
+
+.primaryButton:hover {
+  background-color: #0e7490;
+  background-image: linear-gradient(to right, #0e7490, #0284c7);
+}
+
+.secondaryButton {
+  background-color: #e0f2fe;
+  color: var(--text-color);
+  border: 1px solid #7dd3fc;
+  border-radius: var(--border-radius);
+  padding: 0.6rem 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.secondaryButton:hover {
+  background-color: #bae6fd;
+}
+
+/* Form Elements */
+.input {
+  background-color: white;
+  color: var(--text-color);
+  border: 1px solid #7dd3fc;
+  border-radius: var(--border-radius);
+  padding: 0.6rem;
+  width: 100%;
+}
+
+.input:focus {
+  border: 1px solid var(--primary-color);
+  outline: 2px solid rgba(8, 145, 178, 0.5);
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--alt-text);
+}
+
+/* Navigation */
+.navbar {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 0.6rem 1.25rem;
+  background-image: linear-gradient(to right, #0891b2, #0ea5e9);
+}
+
+.navLink {
+  color: white;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius);
+  transition: background-color 0.2s;
+  font-weight: 500;
+}
+
+.navLink:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.activeNavLink {
+  background-color: rgba(255, 255, 255, 0.25);
+  font-weight: 600;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 250px;
+  background-color: white;
+  border-right: 1px solid #bae6fd;
+  height: 100%;
+}
+
+.sidebarNav {
+  padding: 1.25rem;
+}
+
+.sidebarLink {
+  display: block;
+  padding: 0.75rem 1rem;
+  color: var(--text-color);
+  text-decoration: none;
+  border-radius: var(--border-radius);
+  margin-bottom: 0.25rem;
+  transition: background-color 0.2s, color 0.2s;
+  font-weight: 500;
+}
+
+.sidebarLink:hover {
+  background-color: #e0f2fe;
+  color: var(--primary-color);
+}
+
+.activeSidebarLink {
+  background-color: #bae6fd;
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+/* Footer */
+.footer {
+  background-color: #e0f2fe;
+  border-top: 1px solid #bae6fd;
+  padding: 1rem;
+  text-align: center;
+  color: var(--alt-text);
+  font-size: 0.875rem;
+}
+
+/* Hotel card */
+.hotelCard {
+  display: flex;
+  flex-direction: row;
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+  border: 1px solid #bae6fd;
+}
+
+.hotelImage {
+  width: 240px;
+  object-fit: cover;
+}
+
+.hotelInfo {
+  padding: 1.25rem;
+  flex: 1;
+}
+
+.hotelName {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+}
+
+.hotelLocation {
+  color: var(--alt-text);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hotelLocation::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-color: var(--alt-text);
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3C/svg%3E");
+  mask-repeat: no-repeat;
+}
+
+.hotelDescription {
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.hotelPrice {
+  font-weight: bold;
+  color: var(--primary-color);
+  font-size: 1.25rem;
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background-color: #e0f2fe;
+  border-radius: var(--border-radius);
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  .hotelCard {
+    flex-direction: column;
+  }
+  
+  .hotelImage {
+    width: 100%;
+    height: 200px;
+  }
+  
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #bae6fd;
+  }
+}

@@ -1,0 +1,466 @@
+2025-05-16 00:45:18 +00:00: 🚀 Server 5000 portunda çalışıyor...
+2025-05-16 01:42:09 +00:00: 🚀 Server 5000 portunda çalışıyor...
+2025-05-16 02:07:16 +00:00: 🚀 Server 5000 portunda çalışıyor...
+2025-05-16 02:15:51 +00:00: 🚀 Server 5000 portunda çalışıyor...
+2025-05-16 02:16:08 +00:00: 🚀 Server 5000 portunda çalışıyor...
+2025-05-16 02:19:50 +00:00: 🚀 Server 5000 portunda çalışıyor...
+2025-05-16 02:36:51 +00:00: 🚀 Server 5000 portunda çalışıyor...
+2025-05-16 02:41:37 +00:00: 🚀 Server 5000 portunda çalışıyor...
+2025-05-16 02:49:55 +00:00: 🚀 Server 5000 portunda çalışıyor...
+2025-05-16 03:00:28 +00:00: 🚀 Server 5000 portunda çalışıyor...
+2025-05-16 03:01:13 +00:00: Unauthorized access to /api/user - Not authenticated {
+2025-05-16 03:01:13 +00:00:   sessionID: 'z0h8JnVaF31ovcJ9sbIZi6M7sNVbpwsr',
+2025-05-16 03:01:13 +00:00:   cookies: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0',
+2025-05-16 03:01:13 +00:00:   hasSession: true,
+2025-05-16 03:01:13 +00:00:   headers: {
+2025-05-16 03:01:13 +00:00:     connection: 'upgrade',
+2025-05-16 03:01:13 +00:00:     host: 'www.vipinnotel.com',
+2025-05-16 03:01:13 +00:00:     'sec-ch-ua-platform': '"macOS"',
+2025-05-16 03:01:13 +00:00:     'x-requested-with': 'XMLHttpRequest',
+2025-05-16 03:01:13 +00:00:     'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+2025-05-16 03:01:13 +00:00:     'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+2025-05-16 03:01:13 +00:00:     'sec-ch-ua-mobile': '?0',
+2025-05-16 03:01:13 +00:00:     accept: '*/*',
+2025-05-16 03:01:13 +00:00:     'sec-fetch-site': 'same-origin',
+2025-05-16 03:01:13 +00:00:     'sec-fetch-mode': 'cors',
+2025-05-16 03:01:13 +00:00:     'sec-fetch-dest': 'empty',
+2025-05-16 03:01:13 +00:00:     'accept-encoding': 'gzip, deflate, br, zstd',
+2025-05-16 03:01:13 +00:00:     'accept-language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+2025-05-16 03:01:13 +00:00:     cookie: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0'
+2025-05-16 03:01:13 +00:00:   }
+2025-05-16 03:01:13 +00:00: }
+2025-05-16 03:03:55 +00:00: Unauthorized access to /api/user - Not authenticated {
+2025-05-16 03:03:55 +00:00:   sessionID: 'Bug5OOPOctaG4Xe6sfcxXdWCE0rtRImx',
+2025-05-16 03:03:55 +00:00:   cookies: undefined,
+2025-05-16 03:03:55 +00:00:   hasSession: true,
+2025-05-16 03:03:55 +00:00:   headers: {
+2025-05-16 03:03:55 +00:00:     connection: 'upgrade',
+2025-05-16 03:03:55 +00:00:     host: 'vipinnotel.com',
+2025-05-16 03:03:55 +00:00:     'sec-fetch-dest': 'empty',
+2025-05-16 03:03:55 +00:00:     'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1.1 Mobile/15E148 Safari/604.1',
+2025-05-16 03:03:55 +00:00:     accept: '*/*',
+2025-05-16 03:03:55 +00:00:     'x-requested-with': 'XMLHttpRequest',
+2025-05-16 03:03:55 +00:00:     'sec-fetch-site': 'same-origin',
+2025-05-16 03:03:55 +00:00:     'sec-fetch-mode': 'cors',
+2025-05-16 03:03:55 +00:00:     'accept-language': 'tr-TR,tr;q=0.9',
+2025-05-16 03:03:55 +00:00:     priority: 'u=3, i',
+2025-05-16 03:03:55 +00:00:     'accept-encoding': 'gzip, deflate, br'
+2025-05-16 03:03:55 +00:00:   }
+2025-05-16 03:03:55 +00:00: }
+2025-05-16 03:09:40 +00:00: Unauthorized access to /api/user - Not authenticated {
+2025-05-16 03:09:40 +00:00:   sessionID: '1m9TvlylPcYP8Iaboe47sP-q7WiYn_dI',
+2025-05-16 03:09:40 +00:00:   cookies: undefined,
+2025-05-16 03:09:40 +00:00:   hasSession: true,
+2025-05-16 03:09:40 +00:00:   headers: {
+2025-05-16 03:09:40 +00:00:     connection: 'upgrade',
+2025-05-16 03:09:40 +00:00:     host: 'vipinnotel.com',
+2025-05-16 03:09:40 +00:00:     'x-requested-with': 'XMLHttpRequest',
+2025-05-16 03:09:40 +00:00:     'sec-ch-ua': '"Chromium";v="119", "Google Chrome";v="119"',
+2025-05-16 03:09:40 +00:00:     'sec-ch-ua-mobile': '?0',
+2025-05-16 03:09:40 +00:00:     'sec-ch-ua-platform': '"macOS"',
+2025-05-16 03:09:40 +00:00:     accept: '*/*',
+2025-05-16 03:09:40 +00:00:     'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4590.2 Safari/537.36 Chrome-Lighthouse',
+2025-05-16 03:09:40 +00:00:     'accept-encoding': 'gzip, deflate, br'
+2025-05-16 03:09:40 +00:00:   }
+2025-05-16 03:09:40 +00:00: }
+2025-05-16 03:09:41 +00:00: Unauthorized access to /api/user - Not authenticated {
+2025-05-16 03:09:41 +00:00:   sessionID: 'dVpIMSHWspGkpVGwKCUx4kqsSBML81vq',
+2025-05-16 03:09:41 +00:00:   cookies: undefined,
+2025-05-16 03:09:41 +00:00:   hasSession: true,
+2025-05-16 03:09:41 +00:00:   headers: {
+2025-05-16 03:09:41 +00:00:     connection: 'upgrade',
+2025-05-16 03:09:41 +00:00:     host: 'vipinnotel.com',
+2025-05-16 03:09:41 +00:00:     'x-requested-with': 'XMLHttpRequest',
+2025-05-16 03:09:41 +00:00:     'sec-ch-ua': '"Chromium";v="119", "Google Chrome";v="119"',
+2025-05-16 03:09:41 +00:00:     'sec-ch-ua-mobile': '?1',
+2025-05-16 03:09:41 +00:00:     'sec-ch-ua-platform': '"Android"',
+2025-05-16 03:09:41 +00:00:     accept: '*/*',
+2025-05-16 03:09:41 +00:00:     'user-agent': 'Mozilla/5.0 (Linux; Android 7.0; Moto G (4)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4590.2 Mobile Safari/537.36 Chrome-Lighthouse',
+2025-05-16 03:09:41 +00:00:     'accept-encoding': 'gzip, deflate, br'
+2025-05-16 03:09:41 +00:00:   }
+2025-05-16 03:09:41 +00:00: }
+2025-05-16 04:14:59 +00:00: Unauthorized access to /api/user - Not authenticated {
+2025-05-16 04:14:59 +00:00:   sessionID: 'I1r47egSDe85-JLAoZ6fPZ6ZIsQXNbdV',
+2025-05-16 04:14:59 +00:00:   cookies: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0',
+2025-05-16 04:14:59 +00:00:   hasSession: true,
+2025-05-16 04:14:59 +00:00:   headers: {
+2025-05-16 04:14:59 +00:00:     connection: 'upgrade',
+2025-05-16 04:14:59 +00:00:     host: 'www.vipinnotel.com',
+2025-05-16 04:14:59 +00:00:     'sec-ch-ua-platform': '"macOS"',
+2025-05-16 04:14:59 +00:00:     'x-requested-with': 'XMLHttpRequest',
+2025-05-16 04:14:59 +00:00:     'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+2025-05-16 04:14:59 +00:00:     'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+2025-05-16 04:14:59 +00:00:     'sec-ch-ua-mobile': '?0',
+2025-05-16 04:14:59 +00:00:     accept: '*/*',
+2025-05-16 04:14:59 +00:00:     'sec-fetch-site': 'same-origin',
+2025-05-16 04:14:59 +00:00:     'sec-fetch-mode': 'cors',
+2025-05-16 04:14:59 +00:00:     'sec-fetch-dest': 'empty',
+2025-05-16 04:14:59 +00:00:     'accept-encoding': 'gzip, deflate, br, zstd',
+2025-05-16 04:14:59 +00:00:     'accept-language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+2025-05-16 04:14:59 +00:00:     cookie: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0'
+2025-05-16 04:14:59 +00:00:   }
+2025-05-16 04:14:59 +00:00: }
+2025-05-16 04:17:05 +00:00: 🚀 Server 5000 portunda çalışıyor...
+2025-05-16 04:17:57 +00:00: Unauthorized access to /api/user - Not authenticated {
+2025-05-16 04:17:57 +00:00:   sessionID: '5eVy1zjg6bAA3gVZJxSaJYZijLpSyDZ5',
+2025-05-16 04:17:57 +00:00:   cookies: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0',
+2025-05-16 04:17:57 +00:00:   hasSession: true,
+2025-05-16 04:17:57 +00:00:   headers: {
+2025-05-16 04:17:57 +00:00:     connection: 'upgrade',
+2025-05-16 04:17:57 +00:00:     host: 'www.vipinnotel.com',
+2025-05-16 04:17:57 +00:00:     'sec-ch-ua-platform': '"macOS"',
+2025-05-16 04:17:57 +00:00:     'x-requested-with': 'XMLHttpRequest',
+2025-05-16 04:17:57 +00:00:     'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+2025-05-16 04:17:57 +00:00:     'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+2025-05-16 04:17:57 +00:00:     'sec-ch-ua-mobile': '?0',
+2025-05-16 04:17:57 +00:00:     accept: '*/*',
+2025-05-16 04:17:57 +00:00:     'sec-fetch-site': 'same-origin',
+2025-05-16 04:17:57 +00:00:     'sec-fetch-mode': 'cors',
+2025-05-16 04:17:57 +00:00:     'sec-fetch-dest': 'empty',
+2025-05-16 04:17:57 +00:00:     'accept-encoding': 'gzip, deflate, br, zstd',
+2025-05-16 04:17:57 +00:00:     'accept-language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+2025-05-16 04:17:57 +00:00:     cookie: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0'
+2025-05-16 04:17:57 +00:00:   }
+2025-05-16 04:17:57 +00:00: }
+2025-05-16 04:17:59 +00:00: Unauthorized access to /api/user - Not authenticated {
+2025-05-16 04:17:59 +00:00:   sessionID: 'Fh2nxnHPvE6VzMPcd7xwD8e3iq5YXhDT',
+2025-05-16 04:17:59 +00:00:   cookies: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0',
+2025-05-16 04:17:59 +00:00:   hasSession: true,
+2025-05-16 04:17:59 +00:00:   headers: {
+2025-05-16 04:17:59 +00:00:     connection: 'upgrade',
+2025-05-16 04:17:59 +00:00:     host: 'www.vipinnotel.com',
+2025-05-16 04:17:59 +00:00:     'sec-ch-ua-platform': '"macOS"',
+2025-05-16 04:17:59 +00:00:     'x-requested-with': 'XMLHttpRequest',
+2025-05-16 04:17:59 +00:00:     'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+2025-05-16 04:17:59 +00:00:     'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+2025-05-16 04:17:59 +00:00:     'sec-ch-ua-mobile': '?0',
+2025-05-16 04:17:59 +00:00:     accept: '*/*',
+2025-05-16 04:17:59 +00:00:     'sec-fetch-site': 'same-origin',
+2025-05-16 04:17:59 +00:00:     'sec-fetch-mode': 'cors',
+2025-05-16 04:17:59 +00:00:     'sec-fetch-dest': 'empty',
+2025-05-16 04:17:59 +00:00:     'accept-encoding': 'gzip, deflate, br, zstd',
+2025-05-16 04:17:59 +00:00:     'accept-language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+2025-05-16 04:17:59 +00:00:     cookie: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0'
+2025-05-16 04:17:59 +00:00:   }
+2025-05-16 04:17:59 +00:00: }
+2025-05-16 04:22:35 +00:00: 🚀 Server 5000 portunda çalışıyor...
+2025-05-16 04:26:38 +00:00: Unauthorized access to /api/user - Not authenticated {
+2025-05-16 04:26:38 +00:00:   sessionID: 'o0RDYZ-XevXn-vboh3CEdnYs8rVe9BXp',
+2025-05-16 04:26:38 +00:00:   cookies: undefined,
+2025-05-16 04:26:38 +00:00:   hasSession: true,
+2025-05-16 04:26:38 +00:00:   headers: { host: 'localhost:5000', 'user-agent': 'curl/8.5.0', accept: '*/*' }
+2025-05-16 04:26:38 +00:00: }
+2025-05-16 05:03:41 +00:00: 🚀 Server 5000 portunda çalışıyor...
+2025-05-16 05:55:03 +00:00: 🚀 Server 5000 portunda çalışıyor...
+2025-05-16 06:18:17 +00:00: Unauthorized access to /api/user - Not authenticated {
+2025-05-16 06:18:17 +00:00:   sessionID: '-l4p4jQS8KPlJ8OTT8qEE_IovDcw7WPK',
+2025-05-16 06:18:17 +00:00:   cookies: undefined,
+2025-05-16 06:18:17 +00:00:   hasSession: true,
+2025-05-16 06:18:17 +00:00:   headers: {
+2025-05-16 06:18:17 +00:00:     connection: 'upgrade',
+2025-05-16 06:18:17 +00:00:     host: 'vipinnotel.com',
+2025-05-16 06:18:17 +00:00:     'sec-fetch-dest': 'empty',
+2025-05-16 06:18:17 +00:00:     'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1.1 Mobile/15E148 Safari/604.1',
+2025-05-16 06:18:17 +00:00:     accept: '*/*',
+2025-05-16 06:18:17 +00:00:     'x-requested-with': 'XMLHttpRequest',
+2025-05-16 06:18:17 +00:00:     'sec-fetch-site': 'same-origin',
+2025-05-16 06:18:17 +00:00:     'sec-fetch-mode': 'cors',
+2025-05-16 06:18:17 +00:00:     'accept-language': 'tr-TR,tr;q=0.9',
+2025-05-16 06:18:17 +00:00:     priority: 'u=3, i',
+2025-05-16 06:18:17 +00:00:     'accept-encoding': 'gzip, deflate, br'
+2025-05-16 06:18:17 +00:00:   }
+2025-05-16 06:18:17 +00:00: }
+2025-05-16 08:47:38 +00:00: Unauthorized access to /api/user - Not authenticated {
+2025-05-16 08:47:38 +00:00:   sessionID: 'I5Jy2g9NohkthtnhjTLmLuOqJrGOTSk-',
+2025-05-16 08:47:38 +00:00:   cookies: undefined,
+2025-05-16 08:47:38 +00:00:   hasSession: true,
+2025-05-16 08:47:38 +00:00:   headers: {
+2025-05-16 08:47:38 +00:00:     connection: 'upgrade',
+2025-05-16 08:47:38 +00:00:     host: 'vipinnotel.com',
+2025-05-16 08:47:38 +00:00:     'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
+2025-05-16 08:47:38 +00:00:     'x-requested-with': 'XMLHttpRequest',
+2025-05-16 08:47:38 +00:00:     accept: '*/*',
+2025-05-16 08:47:38 +00:00:     'sec-fetch-site': 'same-origin',
+2025-05-16 08:47:38 +00:00:     'sec-fetch-mode': 'cors',
+2025-05-16 08:47:38 +00:00:     'sec-fetch-dest': 'empty',
+2025-05-16 08:47:38 +00:00:     'accept-encoding': 'gzip, deflate, br, zstd',
+2025-05-16 08:47:38 +00:00:     'accept-language': 'en-US,en;q=0.9,en;q=0.9;q=0.8'
+2025-05-16 08:47:38 +00:00:   }
+2025-05-16 08:47:38 +00:00: }
+2025-05-16 10:04:38 +00:00: Unauthorized access to /api/user - Not authenticated {
+2025-05-16 10:04:38 +00:00:   sessionID: 'yjNmUqdSTClZAqiUlvaKCQP9pnuYabdR',
+2025-05-16 10:04:38 +00:00:   cookies: undefined,
+2025-05-16 10:04:38 +00:00:   hasSession: true,
+2025-05-16 10:04:38 +00:00:   headers: {
+2025-05-16 10:04:38 +00:00:     connection: 'upgrade',
+2025-05-16 10:04:38 +00:00:     host: 'vipinnotel.com',
+2025-05-16 10:04:38 +00:00:     pragma: 'no-cache',
+2025-05-16 10:04:38 +00:00:     'cache-control': 'no-cache',
+2025-05-16 10:04:38 +00:00:     accept: '*/*',
+2025-05-16 10:04:38 +00:00:     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36',
+2025-05-16 10:04:38 +00:00:     'x-requested-with': 'XMLHttpRequest',
+2025-05-16 10:04:38 +00:00:     'sec-ch-ua': '"Chromium";v="134", "Not:A-Brand";v="24", "HeadlessChrome";v="134"',
+2025-05-16 10:04:38 +00:00:     'sec-ch-ua-mobile': '?0',
+2025-05-16 10:04:38 +00:00:     'sec-ch-ua-platform': '"Linux"',
+2025-05-16 10:04:38 +00:00:     'sec-fetch-site': 'same-origin',
+2025-05-16 10:04:38 +00:00:     'sec-fetch-mode': 'cors',
+2025-05-16 10:04:38 +00:00:     'sec-fetch-dest': 'empty',
+2025-05-16 10:04:38 +00:00:     'accept-encoding': 'gzip, deflate, br, zstd'
+2025-05-16 10:04:38 +00:00:   }
+2025-05-16 10:04:38 +00:00: }
+2025-05-16 12:56:35 +00:00: Unauthorized access to /api/user - Not authenticated {
+2025-05-16 12:56:35 +00:00:   sessionID: 'kz2M4qb7q161PusUGuNEtrImgfwI6nuD',
+2025-05-16 12:56:35 +00:00:   cookies: undefined,
+2025-05-16 12:56:35 +00:00:   hasSession: true,
+2025-05-16 12:56:35 +00:00:   headers: {
+2025-05-16 12:56:35 +00:00:     connection: 'upgrade',
+2025-05-16 12:56:35 +00:00:     host: 'vipinnotel.com',
+2025-05-16 12:56:35 +00:00:     'sec-fetch-dest': 'empty',
+2025-05-16 12:56:35 +00:00:     'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1.1 Mobile/15E148 Safari/604.1',
+2025-05-16 12:56:35 +00:00:     accept: '*/*',
+2025-05-16 12:56:35 +00:00:     'x-requested-with': 'XMLHttpRequest',
+2025-05-16 12:56:35 +00:00:     'sec-fetch-site': 'same-origin',
+2025-05-16 12:56:35 +00:00:     'sec-fetch-mode': 'cors',
+2025-05-16 12:56:35 +00:00:     'accept-language': 'tr-TR,tr;q=0.9',
+2025-05-16 12:56:35 +00:00:     priority: 'u=3, i',
+2025-05-16 12:56:35 +00:00:     'accept-encoding': 'gzip, deflate, br'
+2025-05-16 12:56:35 +00:00:   }
+2025-05-16 12:56:35 +00:00: }
+2025-05-16 14:29:24 +00:00: 🚀 Server 5000 portunda çalışıyor...
+2025-05-16 14:35:53 +00:00: 🚀 Server 5000 portunda çalışıyor...
+2025-05-16 14:50:36 +00:00: 🚀 Server 5000 portunda çalışıyor...
+2025-05-16 14:50:47 +00:00: Unauthorized access to /api/user - Not authenticated {
+2025-05-16 14:50:47 +00:00:   sessionID: 'i6bA8G72d1Bt8BcIzElChZLMWLC34160',
+2025-05-16 14:50:47 +00:00:   cookies: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0',
+2025-05-16 14:50:47 +00:00:   hasSession: true,
+2025-05-16 14:50:47 +00:00:   headers: {
+2025-05-16 14:50:47 +00:00:     connection: 'upgrade',
+2025-05-16 14:50:47 +00:00:     host: 'www.vipinnotel.com',
+2025-05-16 14:50:47 +00:00:     'sec-ch-ua-platform': '"macOS"',
+2025-05-16 14:50:47 +00:00:     'x-requested-with': 'XMLHttpRequest',
+2025-05-16 14:50:47 +00:00:     'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+2025-05-16 14:50:47 +00:00:     'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+2025-05-16 14:50:47 +00:00:     'sec-ch-ua-mobile': '?0',
+2025-05-16 14:50:47 +00:00:     accept: '*/*',
+2025-05-16 14:50:47 +00:00:     'sec-fetch-site': 'same-origin',
+2025-05-16 14:50:47 +00:00:     'sec-fetch-mode': 'cors',
+2025-05-16 14:50:47 +00:00:     'sec-fetch-dest': 'empty',
+2025-05-16 14:50:47 +00:00:     'accept-encoding': 'gzip, deflate, br, zstd',
+2025-05-16 14:50:47 +00:00:     'accept-language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+2025-05-16 14:50:47 +00:00:     cookie: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0'
+2025-05-16 14:50:47 +00:00:   }
+2025-05-16 14:50:47 +00:00: }
+2025-05-16 15:06:50 +00:00: 🚀 Server 5000 portunda çalışıyor...
+2025-05-16 15:12:32 +00:00: 🚀 Server 5000 portunda çalışıyor...
+2025-05-16 15:14:31 +00:00: 🚀 Server 5000 portunda çalışıyor...
+2025-05-16 15:14:54 +00:00: Login attempt for username: Unknown {
+2025-05-16 15:14:54 +00:00:   requestHeaders: {
+2025-05-16 15:14:54 +00:00:     connection: 'upgrade',
+2025-05-16 15:14:54 +00:00:     host: 'www.vipinnotel.com',
+2025-05-16 15:14:54 +00:00:     'content-length': '42',
+2025-05-16 15:14:54 +00:00:     'sec-ch-ua-platform': '"macOS"',
+2025-05-16 15:14:54 +00:00:     'x-requested-with': 'XMLHttpRequest',
+2025-05-16 15:14:54 +00:00:     'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+2025-05-16 15:14:54 +00:00:     'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+2025-05-16 15:14:54 +00:00:     'content-type': 'application/json',
+2025-05-16 15:14:54 +00:00:     'sec-ch-ua-mobile': '?0',
+2025-05-16 15:14:54 +00:00:     accept: '*/*',
+2025-05-16 15:14:54 +00:00:     origin: 'https://www.vipinnotel.com',
+2025-05-16 15:14:54 +00:00:     'sec-fetch-site': 'same-origin',
+2025-05-16 15:14:54 +00:00:     'sec-fetch-mode': 'cors',
+2025-05-16 15:14:54 +00:00:     'sec-fetch-dest': 'empty',
+2025-05-16 15:14:54 +00:00:     'accept-encoding': 'gzip, deflate, br, zstd',
+2025-05-16 15:14:54 +00:00:     'accept-language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+2025-05-16 15:14:54 +00:00:     cookie: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0'
+2025-05-16 15:14:54 +00:00:   },
+2025-05-16 15:14:54 +00:00:   requestBody: undefined,
+2025-05-16 15:14:54 +00:00:   cookies: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0'
+2025-05-16 15:14:54 +00:00: }
+2025-05-16 15:14:54 +00:00: Authentication failed: Invalid username or password
+2025-05-16 15:14:55 +00:00: Login attempt for username: Unknown {
+2025-05-16 15:14:55 +00:00:   requestHeaders: {
+2025-05-16 15:14:55 +00:00:     connection: 'upgrade',
+2025-05-16 15:14:55 +00:00:     host: 'www.vipinnotel.com',
+2025-05-16 15:14:55 +00:00:     'content-length': '42',
+2025-05-16 15:14:55 +00:00:     'sec-ch-ua-platform': '"macOS"',
+2025-05-16 15:14:55 +00:00:     'x-requested-with': 'XMLHttpRequest',
+2025-05-16 15:14:55 +00:00:     'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+2025-05-16 15:14:55 +00:00:     'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+2025-05-16 15:14:55 +00:00:     'content-type': 'application/json',
+2025-05-16 15:14:55 +00:00:     'sec-ch-ua-mobile': '?0',
+2025-05-16 15:14:55 +00:00:     accept: '*/*',
+2025-05-16 15:14:55 +00:00:     origin: 'https://www.vipinnotel.com',
+2025-05-16 15:14:55 +00:00:     'sec-fetch-site': 'same-origin',
+2025-05-16 15:14:55 +00:00:     'sec-fetch-mode': 'cors',
+2025-05-16 15:14:55 +00:00:     'sec-fetch-dest': 'empty',
+2025-05-16 15:14:55 +00:00:     'accept-encoding': 'gzip, deflate, br, zstd',
+2025-05-16 15:14:55 +00:00:     'accept-language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+2025-05-16 15:14:55 +00:00:     cookie: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0'
+2025-05-16 15:14:55 +00:00:   },
+2025-05-16 15:14:55 +00:00:   requestBody: undefined,
+2025-05-16 15:14:55 +00:00:   cookies: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0'
+2025-05-16 15:14:55 +00:00: }
+2025-05-16 15:14:55 +00:00: Authentication failed: Invalid username or password
+2025-05-16 15:15:02 +00:00: Login attempt for username: Unknown {
+2025-05-16 15:15:02 +00:00:   requestHeaders: {
+2025-05-16 15:15:02 +00:00:     connection: 'upgrade',
+2025-05-16 15:15:02 +00:00:     host: 'www.vipinnotel.com',
+2025-05-16 15:15:02 +00:00:     'content-length': '42',
+2025-05-16 15:15:02 +00:00:     'sec-ch-ua-platform': '"macOS"',
+2025-05-16 15:15:02 +00:00:     'x-requested-with': 'XMLHttpRequest',
+2025-05-16 15:15:02 +00:00:     'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+2025-05-16 15:15:02 +00:00:     'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+2025-05-16 15:15:02 +00:00:     'content-type': 'application/json',
+2025-05-16 15:15:02 +00:00:     'sec-ch-ua-mobile': '?0',
+2025-05-16 15:15:02 +00:00:     accept: '*/*',
+2025-05-16 15:15:02 +00:00:     origin: 'https://www.vipinnotel.com',
+2025-05-16 15:15:02 +00:00:     'sec-fetch-site': 'same-origin',
+2025-05-16 15:15:02 +00:00:     'sec-fetch-mode': 'cors',
+2025-05-16 15:15:02 +00:00:     'sec-fetch-dest': 'empty',
+2025-05-16 15:15:02 +00:00:     'accept-encoding': 'gzip, deflate, br, zstd',
+2025-05-16 15:15:02 +00:00:     'accept-language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+2025-05-16 15:15:02 +00:00:     cookie: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0'
+2025-05-16 15:15:02 +00:00:   },
+2025-05-16 15:15:02 +00:00:   requestBody: undefined,
+2025-05-16 15:15:02 +00:00:   cookies: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0'
+2025-05-16 15:15:02 +00:00: }
+2025-05-16 15:15:02 +00:00: Authentication failed: Invalid username or password
+2025-05-16 15:15:31 +00:00: Login attempt for username: Unknown {
+2025-05-16 15:15:31 +00:00:   requestHeaders: {
+2025-05-16 15:15:31 +00:00:     connection: 'upgrade',
+2025-05-16 15:15:31 +00:00:     host: 'www.vipinnotel.com',
+2025-05-16 15:15:31 +00:00:     'content-length': '38',
+2025-05-16 15:15:31 +00:00:     'sec-ch-ua-platform': '"macOS"',
+2025-05-16 15:15:31 +00:00:     'x-requested-with': 'XMLHttpRequest',
+2025-05-16 15:15:31 +00:00:     'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+2025-05-16 15:15:31 +00:00:     'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+2025-05-16 15:15:31 +00:00:     'content-type': 'application/json',
+2025-05-16 15:15:31 +00:00:     'sec-ch-ua-mobile': '?0',
+2025-05-16 15:15:31 +00:00:     accept: '*/*',
+2025-05-16 15:15:31 +00:00:     origin: 'https://www.vipinnotel.com',
+2025-05-16 15:15:31 +00:00:     'sec-fetch-site': 'same-origin',
+2025-05-16 15:15:31 +00:00:     'sec-fetch-mode': 'cors',
+2025-05-16 15:15:31 +00:00:     'sec-fetch-dest': 'empty',
+2025-05-16 15:15:31 +00:00:     'accept-encoding': 'gzip, deflate, br, zstd',
+2025-05-16 15:15:31 +00:00:     'accept-language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+2025-05-16 15:15:31 +00:00:     cookie: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0'
+2025-05-16 15:15:31 +00:00:   },
+2025-05-16 15:15:31 +00:00:   requestBody: undefined,
+2025-05-16 15:15:31 +00:00:   cookies: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0'
+2025-05-16 15:15:31 +00:00: }
+2025-05-16 15:15:31 +00:00: Authentication failed: Invalid username or password
+2025-05-16 15:17:50 +00:00: Unauthorized access to /api/user - Not authenticated {
+2025-05-16 15:17:50 +00:00:   sessionID: 'J8c34w8zuR77cxniB-OCehcLZbq9ivUE',
+2025-05-16 15:17:50 +00:00:   cookies: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0',
+2025-05-16 15:17:50 +00:00:   hasSession: true,
+2025-05-16 15:17:50 +00:00:   headers: {
+2025-05-16 15:17:50 +00:00:     connection: 'upgrade',
+2025-05-16 15:17:50 +00:00:     host: 'www.vipinnotel.com',
+2025-05-16 15:17:50 +00:00:     'sec-ch-ua-platform': '"macOS"',
+2025-05-16 15:17:50 +00:00:     'x-requested-with': 'XMLHttpRequest',
+2025-05-16 15:17:50 +00:00:     'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+2025-05-16 15:17:50 +00:00:     'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+2025-05-16 15:17:50 +00:00:     'sec-ch-ua-mobile': '?0',
+2025-05-16 15:17:50 +00:00:     accept: '*/*',
+2025-05-16 15:17:50 +00:00:     'sec-fetch-site': 'same-origin',
+2025-05-16 15:17:50 +00:00:     'sec-fetch-mode': 'cors',
+2025-05-16 15:17:50 +00:00:     'sec-fetch-dest': 'empty',
+2025-05-16 15:17:50 +00:00:     'accept-encoding': 'gzip, deflate, br, zstd',
+2025-05-16 15:17:50 +00:00:     'accept-language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+2025-05-16 15:17:50 +00:00:     cookie: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0'
+2025-05-16 15:17:50 +00:00:   }
+2025-05-16 15:17:50 +00:00: }
+2025-05-16 15:17:54 +00:00: Unauthorized access to /api/user - Not authenticated {
+2025-05-16 15:17:54 +00:00:   sessionID: 'D19wVSAeFlTa7sWupOKbkt8P61_il_ag',
+2025-05-16 15:17:54 +00:00:   cookies: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0',
+2025-05-16 15:17:54 +00:00:   hasSession: true,
+2025-05-16 15:17:54 +00:00:   headers: {
+2025-05-16 15:17:54 +00:00:     connection: 'upgrade',
+2025-05-16 15:17:54 +00:00:     host: 'www.vipinnotel.com',
+2025-05-16 15:17:54 +00:00:     'sec-ch-ua-platform': '"macOS"',
+2025-05-16 15:17:54 +00:00:     'x-requested-with': 'XMLHttpRequest',
+2025-05-16 15:17:54 +00:00:     'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+2025-05-16 15:17:54 +00:00:     'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+2025-05-16 15:17:54 +00:00:     'sec-ch-ua-mobile': '?0',
+2025-05-16 15:17:54 +00:00:     accept: '*/*',
+2025-05-16 15:17:54 +00:00:     'sec-fetch-site': 'same-origin',
+2025-05-16 15:17:54 +00:00:     'sec-fetch-mode': 'cors',
+2025-05-16 15:17:54 +00:00:     'sec-fetch-dest': 'empty',
+2025-05-16 15:17:54 +00:00:     'accept-encoding': 'gzip, deflate, br, zstd',
+2025-05-16 15:17:54 +00:00:     'accept-language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+2025-05-16 15:17:54 +00:00:     cookie: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0'
+2025-05-16 15:17:54 +00:00:   }
+2025-05-16 15:17:54 +00:00: }
+2025-05-16 15:20:16 +00:00: Login attempt for username: Unknown {
+2025-05-16 15:20:16 +00:00:   requestHeaders: {
+2025-05-16 15:20:16 +00:00:     connection: 'upgrade',
+2025-05-16 15:20:16 +00:00:     host: 'www.vipinnotel.com',
+2025-05-16 15:20:16 +00:00:     'content-length': '42',
+2025-05-16 15:20:16 +00:00:     'sec-ch-ua-platform': '"macOS"',
+2025-05-16 15:20:16 +00:00:     'x-requested-with': 'XMLHttpRequest',
+2025-05-16 15:20:16 +00:00:     'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+2025-05-16 15:20:16 +00:00:     'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+2025-05-16 15:20:16 +00:00:     'content-type': 'application/json',
+2025-05-16 15:20:16 +00:00:     'sec-ch-ua-mobile': '?0',
+2025-05-16 15:20:16 +00:00:     accept: '*/*',
+2025-05-16 15:20:16 +00:00:     origin: 'https://www.vipinnotel.com',
+2025-05-16 15:20:16 +00:00:     'sec-fetch-site': 'same-origin',
+2025-05-16 15:20:16 +00:00:     'sec-fetch-mode': 'cors',
+2025-05-16 15:20:16 +00:00:     'sec-fetch-dest': 'empty',
+2025-05-16 15:20:16 +00:00:     'accept-encoding': 'gzip, deflate, br, zstd',
+2025-05-16 15:20:16 +00:00:     'accept-language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+2025-05-16 15:20:16 +00:00:     cookie: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0'
+2025-05-16 15:20:16 +00:00:   },
+2025-05-16 15:20:16 +00:00:   requestBody: undefined,
+2025-05-16 15:20:16 +00:00:   cookies: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0'
+2025-05-16 15:20:16 +00:00: }
+2025-05-16 15:20:16 +00:00: Authentication failed: Invalid username or password
+2025-05-16 15:20:46 +00:00: Login attempt for username: Unknown {
+2025-05-16 15:20:46 +00:00:   requestHeaders: {
+2025-05-16 15:20:46 +00:00:     connection: 'upgrade',
+2025-05-16 15:20:46 +00:00:     host: 'www.vipinnotel.com',
+2025-05-16 15:20:46 +00:00:     'content-length': '42',
+2025-05-16 15:20:46 +00:00:     'sec-ch-ua-platform': '"macOS"',
+2025-05-16 15:20:46 +00:00:     'x-requested-with': 'XMLHttpRequest',
+2025-05-16 15:20:46 +00:00:     'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+2025-05-16 15:20:46 +00:00:     'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+2025-05-16 15:20:46 +00:00:     'content-type': 'application/json',
+2025-05-16 15:20:46 +00:00:     'sec-ch-ua-mobile': '?0',
+2025-05-16 15:20:46 +00:00:     accept: '*/*',
+2025-05-16 15:20:46 +00:00:     origin: 'https://www.vipinnotel.com',
+2025-05-16 15:20:46 +00:00:     'sec-fetch-site': 'same-origin',
+2025-05-16 15:20:46 +00:00:     'sec-fetch-mode': 'cors',
+2025-05-16 15:20:46 +00:00:     'sec-fetch-dest': 'empty',
+2025-05-16 15:20:46 +00:00:     'accept-encoding': 'gzip, deflate, br, zstd',
+2025-05-16 15:20:46 +00:00:     'accept-language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+2025-05-16 15:20:46 +00:00:     cookie: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0'
+2025-05-16 15:20:46 +00:00:   },
+2025-05-16 15:20:46 +00:00:   requestBody: undefined,
+2025-05-16 15:20:46 +00:00:   cookies: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0'
+2025-05-16 15:20:46 +00:00: }
+2025-05-16 15:20:46 +00:00: Authentication failed: Invalid username or password
+2025-05-16 15:36:42 +00:00: 🚀 Server 5000 portunda çalışıyor...
+2025-05-16 15:36:56 +00:00: Login attempt for username: admin {
+2025-05-16 15:36:56 +00:00:   requestHeaders: {
+2025-05-16 15:36:56 +00:00:     connection: 'upgrade',
+2025-05-16 15:36:56 +00:00:     host: 'www.vipinnotel.com',
+2025-05-16 15:36:56 +00:00:     'content-length': '42',
+2025-05-16 15:36:56 +00:00:     'sec-ch-ua-platform': '"macOS"',
+2025-05-16 15:36:56 +00:00:     'x-requested-with': 'XMLHttpRequest',
+2025-05-16 15:36:56 +00:00:     'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+2025-05-16 15:36:56 +00:00:     'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+2025-05-16 15:36:56 +00:00:     'content-type': 'application/json',
+2025-05-16 15:36:56 +00:00:     'sec-ch-ua-mobile': '?0',
+2025-05-16 15:36:56 +00:00:     accept: '*/*',
+2025-05-16 15:36:56 +00:00:     origin: 'https://www.vipinnotel.com',
+2025-05-16 15:36:56 +00:00:     'sec-fetch-site': 'same-origin',
+2025-05-16 15:36:56 +00:00:     'sec-fetch-mode': 'cors',
+2025-05-16 15:36:56 +00:00:     'sec-fetch-dest': 'empty',
+2025-05-16 15:36:56 +00:00:     'accept-encoding': 'gzip, deflate, br, zstd',
+2025-05-16 15:36:56 +00:00:     'accept-language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+2025-05-16 15:36:56 +00:00:     cookie: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0'
+2025-05-16 15:36:56 +00:00:   },
+2025-05-16 15:36:56 +00:00:   requestBody: { username: 'admin', password: 'admin123' },
+2025-05-16 15:36:56 +00:00:   cookies: '_ga_S4HMJ5EXYY=GS2.1.s1747347831$o2$g1$t1747347913$j60$l0$h0'
+2025-05-16 15:36:56 +00:00: }
+2025-05-16 15:45:22 +00:00: 🚀 Server 5000 portunda çalışıyor...
