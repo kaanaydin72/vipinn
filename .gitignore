@@ -1,0 +1,4 @@
+# dist klasörünü dışla ama uploads klasörünü dahil et
+dist/
+!dist/public/uploads/
+!dist/public/uploads/.gitkeep

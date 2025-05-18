@@ -1264,33 +1264,9 @@ var priceRulesRoutes = {
 
 // server/services/upload.ts
 import multer from "multer";
-import path2 from "path";
-import fs from "fs";
-
-// server/utils/paths.ts
 import path from "path";
-import { fileURLToPath } from "url";
-function getProjectRootDir() {
-  if (typeof import.meta.url !== "undefined") {
-    try {
-      const __filename2 = fileURLToPath(import.meta.url);
-      const __dirname2 = path.dirname(__filename2);
-      return path.resolve(__dirname2, "../..");
-    } catch (e) {
-      console.warn("ESM path resolution failed, falling back to process.cwd()");
-    }
-  }
-  return process.cwd();
-}
-function getDistDir() {
-  return path.resolve(getProjectRootDir(), "dist");
-}
-function getPublicDir() {
-  return path.resolve(getDistDir(), "public");
-}
-
-// server/services/upload.ts
-var uploadDir = path2.join(getPublicDir(), "uploads");
+import fs from "fs";
+var uploadDir = path.resolve("dist/public/uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -1300,7 +1276,7 @@ var storage2 = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const fileExt = path2.extname(file.originalname);
+    const fileExt = path.extname(file.originalname);
     cb(null, file.fieldname + "-" + uniqueSuffix + fileExt);
   }
 });
@@ -1316,7 +1292,7 @@ var upload = multer({
   storage: storage2,
   fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024
+    fileSize: 20 * 1024 * 1024
     // 5MB max boyut
   }
 });
@@ -2564,14 +2540,14 @@ async function registerRoutes(app2) {
 }
 
 // server/index.ts
-import path3 from "path";
-import { fileURLToPath as fileURLToPath2 } from "url";
+import path2 from "path";
+import { fileURLToPath } from "url";
 import { dirname } from "path";
 import helmet from "helmet";
 import cors from "cors";
 import dotenv2 from "dotenv";
 dotenv2.config();
-var __filename = fileURLToPath2(import.meta.url);
+var __filename = fileURLToPath(import.meta.url);
 var __dirname = dirname(__filename);
 var app = express();
 app.use(express.json());
@@ -2605,10 +2581,10 @@ app.use(helmet({
     }
   }
 }));
-app.use(express.static(path3.resolve(__dirname, "../dist/public")));
+app.use(express.static(path2.resolve(__dirname, "../dist/public")));
 registerRoutes(app);
 app.get("*", (req, res) => {
-  res.sendFile(path3.resolve(__dirname, "../dist/public/index.html"));
+  res.sendFile(path2.resolve(__dirname, "../dist/public/index.html"));
 });
 var PORT = process.env.PORT || 9060;
 app.listen(PORT, () => {

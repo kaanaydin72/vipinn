@@ -121,6 +121,7 @@ export const insertReservationSchema = createInsertSchema(reservations, {
   numberOfGuests: true,
   totalPrice: true,
   paymentMethod: true,
+  phone: true,
 });
 
 export type InsertReservation = z.infer<typeof insertReservationSchema>;

@@ -137,7 +137,7 @@ export default function RoomCard({
           <img 
             src={room.imageUrl} 
             alt={room.name} 
-            className="h-full w-full object-cover min-h-[140px]"
+            className="w-full h-[180px] object-cover"
           />
           <div className="absolute top-2 left-2 px-2 py-1 bg-white/90 text-[#2094f3] text-xs font-bold rounded-md shadow-sm border border-[#2094f3]/20">
             {room.type}

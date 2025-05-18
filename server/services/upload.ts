@@ -4,7 +4,8 @@ import fs from 'fs';
 import { getPublicDir } from '../utils/paths';
 
 // Yükleme dizini
-const uploadDir = path.join(getPublicDir(), 'uploads');
+//const uploadDir = path.join(getPublicDir(), 'uploads');
+ const uploadDir = path.resolve('dist/public/uploads');
 
 // Dizinin var olduğundan emin olalım
 if (!fs.existsSync(uploadDir)) {
@@ -40,7 +41,7 @@ export const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB max boyut
+    fileSize: 20 * 1024 * 1024, // 5MB max boyut
   }
 });
 
