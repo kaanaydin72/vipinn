@@ -30,7 +30,7 @@ export default function MainLayout({ children, hideFooter = false, pageTitle = "
       {!isMobile && !isAdminPage && <Navbar />}
       
       {/* Ana içerik */}
-      <div className={`flex-1 ${isMobile && !isAdminPage ? 'pb-16 pt-16' : ''}`}>
+      <div className={`flex-1 ${isMobile && !isAdminPage ? 'pb-0 pt-0' : ''}`}>
         {children}
       </div>
       

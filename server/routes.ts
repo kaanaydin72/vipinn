@@ -637,11 +637,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // PayTR ödeme sayfasına yönlendirme URL'ini döndür
             // Doğrudan payment.url yerine paymentUrl parametresi olarak gönder
-            return res.status(201).json({
+            console.log("Dönen paymentInfo:", paymentInfo);
+              return res.status(201).json({
               success: true,
               message: "Ödeme işlemi başarıyla başlatıldı",
               reservation,
               payment: {
+                url: paymentInfo.paymentUrl,
+                token: paymentInfo.token,
                 method: "credit_card",
                 status: "pending"
               },

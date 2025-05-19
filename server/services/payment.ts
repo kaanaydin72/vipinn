@@ -102,16 +102,21 @@ export const initiatePayment = async (
         paymentUrl: paytrResult.paymentUrl
       });
       
-      // Başarılı sonucu döndür
-      return {
-        success: true,
-        message: 'Ödeme işlemi başarıyla başlatıldı',
-        reservationId,
-        paymentMethod: 'credit_card',
-        paymentStatus: 'pending',
-        paymentUrl: paytrResult.paymentUrl,
-        token: paytrResult.token
-      };
+return {
+  success: true,
+  message: 'Ödeme işlemi başarıyla başlatıldı',
+  reservationId,
+  paymentMethod: 'credit_card',
+  paymentStatus: 'pending',
+  paymentUrl: paytrResult.paymentUrl,
+  token: paytrResult.token,
+  payment: {
+    url: paytrResult.paymentUrl,
+    token: paytrResult.token
+  }
+};
+
+
     } else {
       throw new Error('Geçersiz ödeme yöntemi');
     }

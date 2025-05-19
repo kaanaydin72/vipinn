@@ -1,0 +1,264 @@
+import { Reservation, User } from "@shared/schema";
+import { storage } from "../storage";
+import { createHmac } from "crypto";
+import https from "https";
+
+// ENV değişkenleri
+const MERCHANT_ID = process.env.PAYTR_MERCHANT_ID || "";
+const MERCHANT_KEY = process.env.PAYTR_MERCHANT_KEY || "";
+const MERCHANT_SALT = process.env.PAYTR_MERCHANT_SALT || "";
+
+const checkSettings = () => {
+  if (!MERCHANT_ID || !MERCHANT_KEY || !MERCHANT_SALT) {
+    throw new Error('PayTR ayarları eksik. Lütfen .env dosyanızı kontrol edin.');
+  }
+  return true;
+};
+
+/**
+ * Kullanıcı IP adresini base64'le
+ */
+const generateUserIP = (ip: string): string => {
+  return Buffer.from(ip).toString('base64');
+};
+
+/**
+ * PayTR'nin istediği hash algoritması ile TOKEN üret
+ * https://www.paytr.com/entegrasyon/iframe-entegrasyonu dökümanındaki gibi!
+ */
+const generatePaytrToken = (
+  merchant_id: string,
+  user_ip: string,
+  merchant_oid: string,
+  email: string,
+  payment_amount: string,
+  user_basket: string,
+  no_installment: string,
+  max_installment: string,
+  currency: string,
+  test_mode: string,
+  merchant_salt: string,
+  merchant_key: string
+): string => {
+  const hash_str =
+    merchant_id +
+    user_ip +
+    merchant_oid +
+    email +
+    payment_amount +
+    user_basket +
+    no_installment +
+    max_installment +
+    currency +
+    test_mode +
+    merchant_salt;
+  return createHmac('sha256', merchant_key).update(hash_str).digest('base64');
+};
+
+/**
+ * Token ve payment URL üretir
+ */
+const generateToken = async (
+  reservation: Reservation,
+  user: User,
+  callbackUrl: string,
+  userIp: string,
+  successUrl: string,
+  failUrl: string
+): Promise<{ token: string; paymentUrl: string }> => {
+  checkSettings();
+
+  // Room & Hotel bilgisi
+  const room = await storage.getRoom(reservation.roomId);
+  if (!room) throw new Error("Oda bilgileri bulunamadı");
+  const hotel = await storage.getHotel(room.hotelId);
+  if (!hotel) throw new Error("Otel bilgileri bulunamadı");
+
+  // Sepet (basket) formatı
+  const basketItems = [
+    {
+      name: `${hotel.name} - ${room.name}`,
+      price: reservation.totalPrice.toString(),
+      count: 1,
+    },
+  ];
+  const userBasketEncoded = Buffer.from(JSON.stringify(basketItems)).toString("base64");
+
+  // Parametreler
+  const merchantOid = reservation.reservationCode || `VIPINN${reservation.id}`;
+  const userIpEncoded = generateUserIP(userIp);
+  const email = user.email || "misafir@vipinnhotels.com";
+  const nameSurname = user.fullName || user.username || "VIPINN Kullanıcı";
+  const address = "Türkiye";
+  const phone = user.phone || "5555555555";
+  const paymentAmount = Math.max(Math.floor(reservation.totalPrice * 100), 100).toString(); // 1 TL min.
+
+  // **Tüm parametreler string olmalı**
+  const params: Record<string, string> = {
+    merchant_id: MERCHANT_ID,
+    user_ip: userIpEncoded,
+    merchant_oid: merchantOid,
+    email,
+    payment_amount: paymentAmount,
+    currency: "TL",
+    user_basket: userBasketEncoded,
+    no_installment: "0",
+    max_installment: "0",
+    test_mode: process.env.NODE_ENV === "production" ? "0" : "1", // Canlıda 0, testte 1
+    paytr_token: "", // Sonra hesaplanacak
+    debug_on: "1",
+    non_3d: "0",
+    merchant_ok_url: successUrl,
+    merchant_fail_url: failUrl,
+    user_name: nameSurname,
+    user_address: address,
+    user_phone: phone,
+  };
+
+  // PAYTR TOKEN
+  params.paytr_token = generatePaytrToken(
+    params.merchant_id,
+    params.user_ip,
+    params.merchant_oid,
+    params.email,
+    params.payment_amount,
+    params.user_basket,
+    params.no_installment,
+    params.max_installment,
+    params.currency,
+    params.test_mode,
+    MERCHANT_SALT,
+    MERCHANT_KEY
+  );
+
+  // PayTR'ye POST isteği
+  const postData = new URLSearchParams(params);
+
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: "www.paytr.com",
+      port: 443,
+      path: "/odeme/api/get-token",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Length": postData.toString().length,
+      },
+    };
+
+    const req = https.request(options, (res) => {
+      let data = "";
+      res.on("data", (chunk) => {
+        data += chunk;
+      });
+      res.on("end", () => {
+        try {
+          console.log("PayTR API raw response:", data);
+          if (!data || data.trim() === "") {
+            reject(new Error("Empty response from PayTR API"));
+            return;
+          }
+          const response = JSON.parse(data);
+          if (response.status === "success") {
+            const paymentUrl = `https://www.paytr.com/odeme/guvenli/${response.token}`;
+            // DB'ye kayıt
+            storage.createPaytrTransaction({
+              reservationId: reservation.id,
+              merchantOid: merchantOid,
+              token: response.token,
+              amount: reservation.totalPrice,
+              status: "pending",
+              requestData: JSON.stringify(params),
+              responseData: data,
+            }).catch((err) => {
+              console.error("PayTR transaction kaydedilirken hata:", err);
+            });
+            resolve({
+              token: response.token,
+              paymentUrl,
+            });
+          } else {
+            console.error("PayTR token alınamadı:", response);
+            reject(new Error(response.reason || "PayTR token alınamadı"));
+          }
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+
+    req.on("error", (error) => {
+      reject(error);
+    });
+
+    req.write(postData.toString());
+    req.end();
+  });
+};
+
+// CALLBACK doğrulama fonksiyonu değiştirmeye gerek yok
+const verifyCallback = (params: Record<string, string>): boolean => {
+  try {
+    checkSettings();
+  } catch (error) {
+    return false;
+  }
+  const { hash_params, hash } = params;
+  if (!hash_params || !hash) return false;
+  const hashParamsArr = hash_params.split("|");
+  const hashStr = hashParamsArr.map((param) => params[param]).join("");
+  const calculatedHash = createHmac("sha256", MERCHANT_KEY + hashStr + MERCHANT_SALT).digest("base64");
+  return calculatedHash === hash;
+};
+
+// Ayarları oku
+const getPaytrSettings = async () => {
+  try {
+    const settings = await storage.getPaytrSettings();
+    if (!settings || !settings.merchantId || !settings.merchantKey || !settings.merchantSalt) {
+      return {
+        merchantId: MERCHANT_ID,
+        merchantKey: MERCHANT_KEY,
+        merchantSalt: MERCHANT_SALT,
+        testMode: process.env.NODE_ENV !== "production",
+      };
+    }
+    return settings;
+  } catch (error) {
+    return {
+      merchantId: MERCHANT_ID,
+      merchantKey: MERCHANT_KEY,
+      merchantSalt: MERCHANT_SALT,
+      testMode: process.env.NODE_ENV !== "production",
+    };
+  }
+};
+
+// Ayarları güncelle
+const updatePaytrSettings = async (
+  merchantId: string,
+  merchantKey: string,
+  merchantSalt: string,
+  testMode: boolean
+) => {
+  try {
+    const updatedSettings = await storage.updatePaytrSettings({
+      merchantId,
+      merchantKey,
+      merchantSalt,
+      testMode,
+    });
+    return updatedSettings;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const paytrService = {
+  generateToken,
+  verifyCallback,
+  checkSettings,
+  getPaytrSettings,
+  updatePaytrSettings,
+};
+

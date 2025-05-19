@@ -148,7 +148,8 @@ var insertReservationSchema = createInsertSchema(reservations, {
   checkOut: true,
   numberOfGuests: true,
   totalPrice: true,
-  paymentMethod: true
+  paymentMethod: true,
+  phone: true
 });
 var themes = pgTable("themes", {
   id: serial("id").primaryKey(),
@@ -781,8 +782,9 @@ function setupAuth(app2) {
 import { z as z4 } from "zod";
 
 // server/services/paytr.ts
-import { createHash } from "crypto";
+import { createHmac } from "crypto";
 import https from "https";
+import { createHash } from "crypto";
 var MERCHANT_ID = process.env.PAYTR_MERCHANT_ID || "";
 var MERCHANT_KEY = process.env.PAYTR_MERCHANT_KEY || "";
 var MERCHANT_SALT = process.env.PAYTR_MERCHANT_SALT || "";
@@ -790,28 +792,21 @@ var checkSettings = () => {
   if (!MERCHANT_ID || !MERCHANT_KEY || !MERCHANT_SALT) {
     throw new Error("PayTR ayarlar\u0131 eksik. L\xFCtfen .env dosyan\u0131z\u0131 kontrol edin.");
   }
-  console.log("PayTR ayarlar\u0131 ba\u015Far\u0131yla y\xFCklendi");
   return true;
-};
-var generateHash = (params) => {
-  const paramsStr = Object.entries(params).sort(([keyA], [keyB]) => keyA.localeCompare(keyB)).map(([key, value]) => `${key}=${value}`).join("&");
-  const hashStr = `${MERCHANT_SALT}${paramsStr}${MERCHANT_KEY}`;
-  const hash = createHash("sha256").update(hashStr).digest("base64");
-  return hash;
 };
 var generateUserIP = (ip) => {
   return Buffer.from(ip).toString("base64");
 };
+function generatePaytrToken(params) {
+  const hash_str = params.merchant_id + params.user_ip + params.merchant_oid + params.email + params.payment_amount + params.user_basket + params.no_installment + params.max_installment + params.currency + params.test_mode + MERCHANT_SALT;
+  return createHmac("sha256", MERCHANT_KEY).update(hash_str).digest("base64");
+}
 var generateToken = async (reservation, user, callbackUrl, userIp, successUrl, failUrl) => {
   checkSettings();
   const room = await storage.getRoom(reservation.roomId);
-  if (!room) {
-    throw new Error("Oda bilgileri bulunamad\u0131");
-  }
+  if (!room) throw new Error("Oda bilgileri bulunamad\u0131");
   const hotel = await storage.getHotel(room.hotelId);
-  if (!hotel) {
-    throw new Error("Otel bilgileri bulunamad\u0131");
-  }
+  if (!hotel) throw new Error("Otel bilgileri bulunamad\u0131");
   const basketItems = [
     {
       name: `${hotel.name} - ${room.name}`,
@@ -827,39 +822,35 @@ var generateToken = async (reservation, user, callbackUrl, userIp, successUrl, f
   const address = "T\xFCrkiye";
   const phone = user.phone || "5555555555";
   const paymentAmount = Math.max(Math.floor(reservation.totalPrice * 100), 100);
-  console.log(`Rezervasyon tutar\u0131: ${reservation.totalPrice} TL, PayTR i\xE7in \xF6deme tutar\u0131: ${paymentAmount / 100} TL`);
   const params = {
     merchant_id: MERCHANT_ID,
     user_ip: userIpEncoded,
     merchant_oid: merchantOid,
     email,
-    payment_amount: paymentAmount,
-    // kuruş cinsinden (1 TL = 100 kuruş), minimum 100 kuruş (1 TL)
+    payment_amount: paymentAmount.toString(),
     currency: "TL",
     user_basket: userBasketEncoded,
-    no_installment: 0,
-    // taksit seçeneği açık
-    max_installment: 0,
-    // maksimum taksit sayısı (0=sınırsız)
-    test_mode: 1,
-    // test modu açık (geliştirme sırasında)
+    no_installment: "0",
+    max_installment: "0",
+    test_mode: "0",
+    // canlıda 0 yap!
     paytr_token: "",
-    debug_on: 1,
-    // hata ayıklama açık (geliştirme sırasında)
-    non_3d: 0,
-    // 3D Secure açık
+    debug_on: "1",
+    non_3d: "0",
     merchant_ok_url: successUrl,
     merchant_fail_url: failUrl,
     user_name: nameSurname,
     user_address: address,
     user_phone: phone
   };
-  const token = generateHash(params);
-  params.paytr_token = token;
+  const paytr_token = generatePaytrToken(params);
+  params.paytr_token = paytr_token;
+  console.log("PAYTR PARAMS (POSTDATA):", params);
   const postData = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
-    postData.append(key, value.toString());
+    postData.append(key, value);
   });
+  console.log("PAYTR POST DATA:", postData.toString());
   return new Promise((resolve, reject) => {
     const options = {
       hostname: "www.paytr.com",
@@ -868,7 +859,7 @@ var generateToken = async (reservation, user, callbackUrl, userIp, successUrl, f
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        "Content-Length": postData.toString().length
+        "Content-Length": Buffer.byteLength(postData.toString())
       }
     };
     const req = https.request(options, (res) => {
@@ -886,11 +877,6 @@ var generateToken = async (reservation, user, callbackUrl, userIp, successUrl, f
           }
           const response = JSON.parse(data);
           if (response.status === "success") {
-            console.log(`PayTR token olu\u015Fturuldu:`, {
-              token: response.token,
-              tokenLength: response.token.length,
-              expectedUrlFormat: "https://www.paytr.com/odeme/guvenli/{TOKEN}"
-            });
             const paymentUrl = `https://www.paytr.com/odeme/guvenli/${response.token}`;
             storage.createPaytrTransaction({
               reservationId: reservation.id,
@@ -932,9 +918,7 @@ var verifyCallback = (params) => {
     return false;
   }
   const { hash_params, hash } = params;
-  if (!hash_params || !hash) {
-    return false;
-  }
+  if (!hash_params || !hash) return false;
   const hashParamsArr = hash_params.split("|");
   const hashStr = hashParamsArr.map((param) => params[param]).join("");
   const calculatedHash = createHash("sha256").update(MERCHANT_KEY + hashStr + MERCHANT_SALT).digest("base64");
@@ -978,7 +962,6 @@ var updatePaytrSettings = async (merchantId, merchantKey, merchantSalt, testMode
 };
 var paytrService = {
   generateToken,
-  generateHash,
   verifyCallback,
   checkSettings,
   getPaytrSettings,
@@ -1042,7 +1025,11 @@ var initiatePayment = async (reservationId, paymentMethod, userId, requestDetail
         paymentMethod: "credit_card",
         paymentStatus: "pending",
         paymentUrl: paytrResult.paymentUrl,
-        token: paytrResult.token
+        token: paytrResult.token,
+        payment: {
+          url: paytrResult.paymentUrl,
+          token: paytrResult.token
+        }
       };
     } else {
       throw new Error("Ge\xE7ersiz \xF6deme y\xF6ntemi");
@@ -1751,11 +1738,14 @@ async function registerRoutes(app2) {
               }
             );
             console.log("PayTR \xD6deme i\u015Flemi ba\u015Far\u0131l\u0131:", paymentInfo);
+            console.log("D\xF6nen paymentInfo:", paymentInfo);
             return res.status(201).json({
               success: true,
               message: "\xD6deme i\u015Flemi ba\u015Far\u0131yla ba\u015Flat\u0131ld\u0131",
               reservation,
               payment: {
+                url: paymentInfo.paymentUrl,
+                token: paymentInfo.token,
                 method: "credit_card",
                 status: "pending"
               },
