@@ -581,10 +581,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!hotel) {
           return res.status(400).json({ message: "Hotel not found" });
         }
-        
+        // Oda kontenjanını kontrol et!
+const oda = await storage.getRoom(validatedData.roomId);
+if (!oda || oda.roomCount <= 0) {
+  return res.status(400).json({ message: "Bu oda için müsaitlik yok!" });
+}
+
         // Create reservation
         const reservation = await storage.createReservation(validatedData);
-        
+        await storage.decrementRoomCount(validatedData.roomId);
+
         // Handle payment based on selected payment method
         if (validatedData.paymentMethod === "credit_card") {
           try {

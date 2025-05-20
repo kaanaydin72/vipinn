@@ -129,13 +129,19 @@ export default function RoomEditPageMobile() {
   const roomId = params?.id ? parseInt(params.id) : 0;
   
   const { data: room, isLoading: isLoadingRoom } = useQuery<Room>({
-    queryKey: ['/api/rooms', roomId],
-    queryFn: async () => {
-      const response = await apiRequest("GET", `/api/rooms/${roomId}`);
-      return response.json();
-    },
-    enabled: !!roomId,
-  });
+  queryKey: ['/api/rooms', roomId],
+  queryFn: async () => {
+    const response = await apiRequest("GET", `/api/rooms/${roomId}`);
+    const json = await response.json();
+    console.log("API /api/rooms/:id cevabı:", json); // <-- LOG EKLENDİ!
+    // Eğer veri boşsa null döndür
+    if (!json || Object.keys(json).length === 0) return null;
+    if (json.data) return json.data;
+    return json;
+  },
+  enabled: !!roomId,
+});
+
   
   // Fetch hotels
   const { data: hotels = [], isLoading: isLoadingHotels } = useQuery<Hotel[]>({

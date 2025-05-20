@@ -8,15 +8,15 @@ import { Wifi, Bed, Coffee, Bath, Check, Snowflake, Tv, Moon, Building2 } from "
 import { useQuery } from "@tanstack/react-query";
 
 interface RoomCardProps {
-  room: Room & { 
+  room: Room & {
     nightCount?: number;
-    totalPriceCalculated?: number; 
-  }; // İhtiyaç duyduğumuz ek alanları ekliyoruz
+    totalPriceCalculated?: number;
+  };
   selected?: boolean;
   onSelect?: () => void;
-  onBook?: (roomId: number) => void; // onBook prop ekledik
+  onBook?: (roomId: number) => void;
   showBookButton?: boolean;
-  showDetailButton?: boolean; // Detay butonu görünürlük kontrolü için yeni prop
+  showDetailButton?: boolean;
   bookingInfo?: {
     dateRange?: any;
     adultCount?: number;
@@ -26,85 +26,60 @@ interface RoomCardProps {
   };
 }
 
-export default function RoomCard({ 
-  room, 
-  selected = false, 
+export default function RoomCard({
+  room,
+  selected = false,
   onSelect,
   onBook,
   showBookButton = true,
-  showDetailButton = false, // Varsayılan olarak false (otel detayları sayfasında gösterme)
+  showDetailButton = false,
   bookingInfo
 }: RoomCardProps) {
   const deviceType = useDeviceType();
   const isMobile = deviceType === 'mobile';
-  
-  // Fiyat kontrolünü daha güvenli hale getirelim
+
   let dailyPricesArray: any[] = [];
   let weekdayPricesArray: any[] = [];
-  
+
   try {
-    // Takvim fiyatları varsa parse et
     if (room.dailyPrices) {
       dailyPricesArray = JSON.parse(room.dailyPrices);
     }
-    
-    // Haftanın günleri fiyatları varsa parse et
     if (room.weekdayPrices) {
       weekdayPricesArray = JSON.parse(room.weekdayPrices);
     }
   } catch (e) {
-    console.error("Fiyat parse hatası:", e);
     dailyPricesArray = [];
     weekdayPricesArray = [];
   }
-  
-  // Takvim bazlı fiyatlar var mı kontrol et
+
   const hasPriceForSelectedDates = dailyPricesArray.length > 0 || weekdayPricesArray.length > 0;
-  
-  // Gösterilecek fiyatı belirle:
-  // 1. Takvim bazlı fiyatlar varsa, toplam fiyatı göster
-  // 2. Yoksa varsayılan fiyatı göster
-  
-  // Toplam fiyat, seçilen gece sayısı için - takvim bazlı hesaplama
   const totalPrice = room.totalPriceCalculated || 0;
-  
-  // Gecelik birim fiyat - dailyPrices'dan al
   let defaultNightlyPrice = 0;
-  
-  // Get the most recent price from dailyPrices if available
+
   if (dailyPricesArray.length > 0) {
     defaultNightlyPrice = dailyPricesArray[dailyPricesArray.length - 1].price;
   } else if (weekdayPricesArray.length > 0) {
-    // If no daily prices, check if we have weekday prices
-    const today = new Date().getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const today = new Date().getDay();
     const weekdayPrice = weekdayPricesArray.find(wp => wp.day === today);
     if (weekdayPrice) {
       defaultNightlyPrice = weekdayPrice.price;
     }
   }
-  
-  // Gecelik birim fiyat (gösterge için) - tamamen takvim bazlı fiyatlandırma
+
   const pricePerNight = defaultNightlyPrice || 0;
-  
-  // Gösterilecek fiyat: Eğer toplam fiyat varsa onu kullan, yoksa birim fiyat bilgisinden hesapla
   const displayPrice = hasPriceForSelectedDates
     ? (totalPrice > 0 ? totalPrice : pricePerNight * (room.nightCount || 1))
-    : pricePerNight; // Tek gecelik varsayılan fiyat
-    
-  // Gösterilecek eski fiyat (indirim göstergesi için)
+    : pricePerNight;
   const displayOldPrice = hasPriceForSelectedDates ? Math.round(displayPrice * 1.15) : Math.round(pricePerNight * 1.15);
 
-  // Otel bilgisini almak için React Query kullanıyoruz
   const { data: hotel } = useQuery({
     queryKey: [`/api/hotels/${room.hotelId}`],
-    // Odanın bağlı olduğu bir otel yoksa sorguyu çalıştırma
     enabled: !!room.hotelId,
   });
-  
-  // Otel adı - API'den alınan verilerden gelir
+
   const hotelName = hotel?.name || "";
 
-  // Get appropriate icon for feature
   const getFeatureIcon = (feature: string) => {
     switch (feature.toLowerCase()) {
       case 'king yatak':
@@ -134,16 +109,16 @@ export default function RoomCard({
       <div className="flex flex-row">
         {/* Sol taraf - Görsel */}
         <div className="relative w-1/3 min-w-[120px]">
-          <img 
-            src={room.imageUrl} 
-            alt={room.name} 
+          <img
+            src={room.imageUrl}
+            alt={room.name}
             className="w-full h-[180px] object-cover"
           />
           <div className="absolute top-2 left-2 px-2 py-1 bg-white/90 text-[#2094f3] text-xs font-bold rounded-md shadow-sm border border-[#2094f3]/20">
             {room.type}
           </div>
         </div>
-        
+
         {/* Sağ taraf - İçerik */}
         <CardContent className="p-3 w-2/3 flex flex-col justify-between">
           <div>
@@ -154,7 +129,6 @@ export default function RoomCard({
               </div>
             )}
             <h3 className="text-base font-bold text-neutral-800 mb-1 line-clamp-1">{room.name}</h3>
-            
             <div className="flex flex-wrap gap-1 mb-3">
               {room.features.slice(0, 3).map((feature, index) => (
                 <Badge key={index} variant="outline" className="flex items-center bg-[#2094f3]/5 text-[#2094f3] text-xs px-2 py-0.5 border border-[#2094f3]/20">
@@ -164,7 +138,7 @@ export default function RoomCard({
               ))}
             </div>
           </div>
-          
+
           <div>
             {/* Fiyat kısmı */}
             <div className="flex justify-end mt-2 mb-1">
@@ -181,8 +155,19 @@ export default function RoomCard({
                         {room.nightCount && room.nightCount > 1 && ' (Toplam)'}
                       </span>
                     </div>
+                    <div className="text-xs text-neutral-600 font-medium mb-2">
+                      {room.roomCount === 0 ? null
+                        : room.roomCount > 0 && room.roomCount <= 5 ? (
+                          <span className="text-red-500 font-semibold animate-pulse">
+                            Son {room.roomCount} oda!
+                          </span>
+                        ) : (
+                          <>Oda Kontenjanı: <span className="font-bold">{room.roomCount}</span> adet</>
+                        )
+                      }
+                    </div>
                     <div className="text-xs text-neutral-500 flex items-center mt-1">
-                      {room.nightCount && room.nightCount > 0 
+                      {room.nightCount && room.nightCount > 0
                         ? <><Moon className="h-3 w-3 mr-0.5 text-[#2094f3]" /> {room.nightCount} gece için toplam fiyat</>
                         : "Gecelik fiyat"}
                     </div>
@@ -194,13 +179,13 @@ export default function RoomCard({
                 )}
               </div>
             </div>
-            
+
             {/* Butonlar */}
             <div className="flex justify-end gap-2">
               {showDetailButton && (
-                <Button 
+                <Button
                   asChild
-                  variant="outline" 
+                  variant="outline"
                   size={isMobile ? "sm" : "default"}
                   className={`${isMobile ? 'text-xs py-1 px-2' : 'text-sm py-1.5 px-4'} border-[#2094f3] text-[#2094f3] hover:bg-[#2094f3]/10`}
                 >
@@ -209,28 +194,31 @@ export default function RoomCard({
                   </Link>
                 </Button>
               )}
-              
-              {showBookButton ? (
-                // Rezervasyon butonu - doğrudan yönlendirme yapacak
-                <Button 
-                  onClick={() => onBook && onBook(room.id)}
-                  variant="default" 
+
+              {room.roomCount === 0 ? (
+                <Button
+                  variant="default"
                   size={isMobile ? "sm" : "default"}
-                  className={`${isMobile ? 'text-xs py-1 px-2' : 'text-sm py-1.5 px-4'} ${!hasPriceForSelectedDates ? 'bg-neutral-300 hover:bg-neutral-400 cursor-not-allowed' : 'bg-[#2094f3] hover:bg-[#1a75c0]'} shadow-md`}
-                  disabled={!hasPriceForSelectedDates}
+                  className="bg-neutral-300 cursor-not-allowed text-neutral-400 shadow-md"
+                  disabled
                 >
-                  {!hasPriceForSelectedDates 
-                    ? (isMobile ? 'Müsait Değil' : 'Oda Müsait Değil') 
-                    : (isMobile ? 'Rezerve Et' : 'Rezervasyon Yap')}
+                  Oda Tükendi
+                </Button>
+              ) : showBookButton ? (
+                <Button
+                  onClick={() => onBook && onBook(room.id)}
+                  variant="default"
+                  size={isMobile ? "sm" : "default"}
+                  className={`${isMobile ? 'text-xs py-1 px-2' : 'text-sm py-1.5 px-4'} bg-[#2094f3] hover:bg-[#1a75c0] shadow-md`}
+                >
+                  {isMobile ? 'Rezerve Et' : 'Rezervasyon Yap'}
                 </Button>
               ) : (
-                // Oda seçme butonu - normal buton, click handler ile işlenir
-                <Button 
+                <Button
                   onClick={onSelect}
-                  variant="default" 
+                  variant="default"
                   size={isMobile ? "sm" : "default"}
-                  className={`${isMobile ? 'text-xs py-1 px-2' : 'text-sm py-1.5 px-4'} ${!hasPriceForSelectedDates ? 'bg-neutral-300 hover:bg-neutral-400 cursor-not-allowed' : 'bg-[#2094f3] hover:bg-[#1a75c0]'} shadow-md`}
-                  disabled={!hasPriceForSelectedDates}
+                  className={`${isMobile ? 'text-xs py-1 px-2' : 'text-sm py-1.5 px-4'} bg-[#2094f3] hover:bg-[#1a75c0] shadow-md`}
                 >
                   {selected ? 'Seçildi' : 'Seç'}
                 </Button>

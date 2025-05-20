@@ -25,8 +25,16 @@ export class DatabaseStorage implements IStorage {
       pool, 
       createTableIfMissing: true 
     });
-  }
+    }
 
+async decrementRoomCount(roomId: number): Promise<void> {
+  await pool.query(
+    `UPDATE rooms SET room_count = room_count - 1 WHERE id = $1 AND room_count > 0`,
+    [roomId]
+  );
+}
+
+  
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -177,7 +185,8 @@ export class DatabaseStorage implements IStorage {
       .insert(reservations)
       .values({
         ...reservation,
-        reservationCode
+        reservationCode,
+       status: 'approved'
       })
       .returning();
     return newReservation;

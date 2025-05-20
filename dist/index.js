@@ -286,6 +286,12 @@ var DatabaseStorage = class {
       createTableIfMissing: true
     });
   }
+  async decrementRoomCount(roomId) {
+    await pool.query(
+      `UPDATE rooms SET room_count = room_count - 1 WHERE id = $1 AND room_count > 0`,
+      [roomId]
+    );
+  }
   // User operations
   async getUser(id) {
     const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -384,7 +390,8 @@ var DatabaseStorage = class {
     const reservationCode = `VIPINN${Math.floor(1e5 + Math.random() * 9e5)}`;
     const [newReservation] = await db.insert(reservations).values({
       ...reservation,
-      reservationCode
+      reservationCode,
+      status: "approved"
     }).returning();
     return newReservation;
   }
@@ -1706,7 +1713,12 @@ async function registerRoutes(app2) {
         if (!hotel) {
           return res.status(400).json({ message: "Hotel not found" });
         }
+        const oda = await storage.getRoom(validatedData.roomId);
+        if (!oda || oda.roomCount <= 0) {
+          return res.status(400).json({ message: "Bu oda i\xE7in m\xFCsaitlik yok!" });
+        }
         const reservation = await storage.createReservation(validatedData);
+        await storage.decrementRoomCount(validatedData.roomId);
         if (validatedData.paymentMethod === "credit_card") {
           try {
             let rawIp = req.headers["x-forwarded-for"]?.toString() || req.socket.remoteAddress || "127.0.0.1";
