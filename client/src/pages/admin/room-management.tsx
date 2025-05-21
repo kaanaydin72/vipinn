@@ -1,20 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
-import { Room, Hotel } from "@shared/schema";
-import AdminSidebar from "@/components/admin/admin-sidebar";
+import { Room, Hotel, insertRoomSchema } from "@shared/schema";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-  CardDescription,
-} from "@/components/ui/card";
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -22,316 +31,328 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Loader2, Plus, Pencil, Trash2, Building, Users, Home,
-  Search, Filter, ArrowUp, ArrowDown, BedDouble
-} from "lucide-react";
+import { Loader2, ArrowLeft, CalendarDays, Calendar as CalendarIcon, Clock, Save, Upload, Star, Trash } from "lucide-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
-export default function RoomManagement() {
+const availableFeatures = [
+  { id: "kingYatak", label: "King Yatak" },
+  { id: "wifi", label: "Ücretsiz Wi-Fi" },
+  { id: "tv", label: "Akıllı TV" },
+  { id: "klima", label: "Klima" },
+  { id: "banyo", label: "Özel Banyo" },
+  { id: "minibar", label: "Mini Bar" },
+  { id: "denizManzara", label: "Deniz Manzarası" },
+  { id: "jakuzi", label: "Jakuzi" },
+  { id: "oturmaAlani", label: "Oturma Alanı" },
+  { id: "teras", label: "Özel Teras" },
+  { id: "ikiYatakOdasi", label: "2 Yatak Odası" },
+  { id: "ikiBanyo", label: "2 Banyo" },
+];
+
+const roomTypes = [
+  { id: "standart", label: "Standart Oda" },
+  { id: "deluxe", label: "Deluxe Oda" },
+  { id: "suit", label: "Suit Oda" },
+  { id: "aile", label: "Aile Odası" },
+];
+
+const weekdays = [
+  { index: 0, name: "Pazar" },
+  { index: 1, name: "Pazartesi" },
+  { index: 2, name: "Salı" },
+  { index: 3, name: "Çarşamba" },
+  { index: 4, name: "Perşembe" },
+  { index: 5, name: "Cuma" },
+  { index: 6, name: "Cumartesi" },
+];
+
+const roomFormSchema = insertRoomSchema.extend({
+  features: z.array(z.string()).min(1, {
+    message: "En az bir özellik seçmelisiniz",
+  }),
+  hotelId: z.coerce.number(),
+});
+
+type RoomFormValues = z.infer<typeof roomFormSchema>;
+
+export default function RoomEditPageMobile() {
+  const [match, params] = useRoute("/admin/rooms/edit/:id");
+  const [location, navigate] = useLocation();
   const { toast } = useToast();
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterHotelId, setFilterHotelId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState("details");
 
-  // Fetch rooms and hotels
-  const { data: rooms = [], isLoading: isLoadingRooms } = useQuery<Room[]>({
-    queryKey: ['/api/rooms'],
+  // Fiyatlandırma state'leri
+  const [selectedRange, setSelectedRange] = useState<{ from: Date | null, to: Date | null }>({ from: null, to: null });
+  const [rangePrice, setRangePrice] = useState<number>(0);
+
+  // Takvimde gösterilecek fiyatlar
+  const [dailyPrices, setDailyPrices] = useState<Array<{ date: Date, price: number }>>([]);
+  // Haftanın günleri için fiyatlar
+  const [weekdayPrices, setWeekdayPrices] = useState<Array<{ dayIndex: number, price: number }>>([]);
+
+  // Takvimde gün seçince o güne ait fiyatı göster
+  const [calendarSelectedDay, setCalendarSelectedDay] = useState<Date | null>(null);
+
+  // Hotel ve oda çekme kodları
+  const roomId = params?.id ? parseInt(params.id) : 0;
+
+  const { data: room, isLoading: isLoadingRoom } = useQuery<Room>({
+    queryKey: ['/api/rooms', roomId],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/rooms/${roomId}`);
+      const json = await response.json();
+      if (!json || Object.keys(json).length === 0) return null;
+      if (json.data) return json.data;
+      return json;
+    },
+    enabled: !!roomId,
   });
 
   const { data: hotels = [], isLoading: isLoadingHotels } = useQuery<Hotel[]>({
     queryKey: ['/api/hotels'],
   });
 
-  const isLoading = isLoadingRooms || isLoadingHotels;
+  const isLoading = isLoadingRoom || isLoadingHotels;
 
-  // Gruplandırma işlemi - odaları otellerine göre grupla
-  const groupedRooms = rooms.reduce((acc, room) => {
-    const hotelId = room.hotelId;
-    if (!acc[hotelId]) {
-      acc[hotelId] = [];
+  useEffect(() => {
+    if (room && room.dailyPrices) {
+      try {
+        const parsedDailyPrices = JSON.parse(room.dailyPrices);
+        setDailyPrices(parsedDailyPrices.map((item: any) => ({
+          date: new Date(item.date),
+          price: item.price
+        })));
+      } catch (e) { }
     }
-    acc[hotelId].push(room);
-    return acc;
-  }, {} as Record<number, Room[]>);
+    if (room && room.weekdayPrices) {
+      try {
+        const parsedWeekdayPrices = JSON.parse(room.weekdayPrices);
+        setWeekdayPrices(parsedWeekdayPrices);
+      } catch (e) { }
+    }
+  }, [room]);
 
-  // Filtreleme işlemi
-  const filteredHotelIds = Object.keys(groupedRooms)
-    .map(Number)
-    .filter(hotelId => {
-      // Otel filtresi varsa sadece o oteli göster
-      if (filterHotelId !== null) {
-        return hotelId === filterHotelId;
-      }
-      
-      // Arama filtresi varsa, otelin odalarından herhangi biri eşleşiyorsa oteli göster
-      if (searchQuery) {
-        return groupedRooms[hotelId].some(room => 
-          room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          room.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          room.type.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-      }
-      
-      // Filtre yoksa tüm otelleri göster
-      return true;
-    });
+  const form = useForm<RoomFormValues>({
+    resolver: zodResolver(roomFormSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      hotelId: 1,
+      imageUrl: "",
+      capacity: 2,
+      type: "Standart Oda",
+      features: [],
+    },
+  });
 
-  // Delete room mutation
-  const deleteRoomMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/rooms/${id}`);
-      return id;
+  useEffect(() => {
+    if (room) {
+      form.reset({
+        name: room.name,
+        description: room.description,
+        hotelId: room.hotelId,
+        imageUrl: room.imageUrl,
+        capacity: room.capacity,
+        type: room.type,
+        features: room.features,
+      });
+    }
+  }, [room, form]);
+
+  // Odayı güncelle
+  const updateRoomMutation = useMutation({
+    mutationFn: async (roomData: any) => {
+      if (typeof roomData.dailyPrices === 'object') {
+        roomData.dailyPrices = JSON.stringify(roomData.dailyPrices);
+      }
+      if (typeof roomData.weekdayPrices === 'object') {
+        roomData.weekdayPrices = JSON.stringify(roomData.weekdayPrices);
+      }
+      const response = await apiRequest("PUT", `/api/rooms/${roomId}`, roomData);
+      if (!response.ok) throw new Error(await response.text());
+      return await response.json();
     },
     onSuccess: () => {
-      toast({
-        title: "Oda silindi",
-        description: "Oda başarıyla silindi.",
-      });
+      toast({ title: "Oda güncellendi", description: "Oda bilgileri başarıyla güncellendi." });
       queryClient.invalidateQueries({ queryKey: ['/api/rooms'] });
-      setDeleteDialogOpen(false);
-      setRoomToDelete(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/rooms', roomId] });
+      navigate("/admin/rooms");
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Hata",
-        description: `Oda silinirken bir hata oluştu: ${error.message}`,
+        description: `Oda güncellenirken bir hata oluştu: ${error.message}`,
         variant: "destructive",
       });
     },
   });
 
-  const handleDelete = () => {
-    if (roomToDelete) {
-      deleteRoomMutation.mutate(roomToDelete.id);
+  // Tarih aralığına fiyat ekle
+  function handleAddRangePrice() {
+    if (!selectedRange.from || !selectedRange.to || rangePrice <= 0) return;
+    const start = new Date(selectedRange.from);
+    const end = new Date(selectedRange.to);
+    const newPrices: Array<{ date: Date, price: number }> = [];
+    let currentDate = new Date(start);
+    while (currentDate <= end) {
+      newPrices.push({ date: new Date(currentDate), price: rangePrice });
+      currentDate.setDate(currentDate.getDate() + 1);
     }
-  };
+    // Önceki fiyatlar silinmeden, aynı günü tekrar eklerse üstüne yaz
+    const updatedPrices = [...dailyPrices];
+    newPrices.forEach(newPrice => {
+      const idx = updatedPrices.findIndex(p => p.date.toDateString() === newPrice.date.toDateString());
+      if (idx >= 0) updatedPrices[idx] = newPrice;
+      else updatedPrices.push(newPrice);
+    });
+    setDailyPrices(updatedPrices);
+    setSelectedRange({ from: null, to: null });
+    setRangePrice(0);
+    toast({ title: "Fiyat eklendi", description: "Tarih aralığına fiyatlar atandı." });
+  }
 
-  const openDeleteDialog = (room: Room) => {
-    setRoomToDelete(room);
-    setDeleteDialogOpen(true);
-  };
+  // Haftanın günlerine fiyat atama
+  function handleAddWeekdayPrice(dayIndex: number, price: number) {
+    if (price <= 0) return;
+    const idx = weekdayPrices.findIndex(w => w.dayIndex === dayIndex);
+    let updated = [...weekdayPrices];
+    if (idx >= 0) updated[idx] = { dayIndex, price };
+    else updated.push({ dayIndex, price });
+    setWeekdayPrices(updated);
+    toast({ title: "Fiyat eklendi", description: `${weekdays[dayIndex].name}: ${price}₺` });
+  }
 
-  const getHotelNameById = (hotelId: number) => {
-    const hotel = hotels.find(h => h.id === hotelId);
-    return hotel ? hotel.name : "Bilinmeyen Otel";
-  };
+  // Takvimde o güne fiyat bul (öncelik dailyPrices, yoksa weekdayPrices)
+  function getPriceForDate(date: Date) {
+    const daily = dailyPrices.find(p => p.date.toDateString() === date.toDateString());
+    if (daily) return daily.price;
+    const week = weekdayPrices.find(w => w.dayIndex === date.getDay());
+    if (week) return week.price;
+    return null;
+  }
 
-  const getHotelImageById = (hotelId: number) => {
-    const hotel = hotels.find(h => h.id === hotelId);
-    return hotel?.imageUrl || "https://via.placeholder.com/400x200?text=Otel";
-  };
-
-  // Aynı tipteki odaları bir araya getir
-  const groupRoomsByType = (rooms: Room[]) => {
-    return rooms.reduce((acc, room) => {
-      const type = room.type;
-      if (!acc[type]) {
-        acc[type] = [];
-      }
-      acc[type].push(room);
-      return acc;
-    }, {} as Record<string, Room[]>);
-  };
+  // Submit işlemi
+  function onSubmit(formData: RoomFormValues) {
+    // Tüm resimler ve diğer alanlar aynen
+    const updatedData = {
+      ...formData,
+      price: 0,
+      dailyPrices: JSON.stringify(dailyPrices),
+      weekdayPrices: JSON.stringify(weekdayPrices)
+    };
+    updateRoomMutation.mutate(updatedData);
+  }
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex">
-      <AdminSidebar />
-
-      <main className="flex-1 p-6 overflow-auto">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-            <h1 className="text-3xl font-bold font-heading text-neutral-800 dark:text-white">Oda Yönetimi</h1>
-            
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1 min-w-[200px]">
-                <Input
-                  placeholder="Oda adı, tipi veya özelliklerini ara..."
-                  className="pl-9"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
-              </div>
-              
-              <Select
-                value={filterHotelId ? filterHotelId.toString() : "all"}
-                onValueChange={(value) => 
-                  setFilterHotelId(value === "all" ? null : parseInt(value))
-                }
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Tüm Oteller" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tüm Oteller</SelectItem>
-                  {hotels.map((hotel) => (
-                    <SelectItem key={hotel.id} value={hotel.id.toString()}>
-                      {hotel.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Button onClick={() => window.location.href = "/admin/rooms/add"}>
-                <Plus className="mr-2 h-4 w-4" />
-                Yeni Oda Ekle
-              </Button>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-[#e0e7ff] via-white to-[#f0f9ff] dark:from-neutral-900 dark:to-neutral-800">
+      <div className="sticky top-0 z-10">
+        <div className="bg-gradient-to-r from-[#2094f3] to-[#38b6ff] text-white shadow-md rounded-b-2xl">
+          <div className="flex items-center px-4 h-14">
+            <Button variant="ghost" size="icon" className="text-white" onClick={() => navigate("/admin/rooms")}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="flex-1 text-center font-semibold text-lg">Odayı Düzenle</h1>
           </div>
-
-          {isLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            </div>
-          ) : filteredHotelIds.length === 0 ? (
-            <Card className="border border-dashed">
-              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="bg-neutral-100 dark:bg-neutral-800 rounded-full p-4 mb-4">
-                  <BedDouble className="h-10 w-10 text-neutral-500" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Henüz Oda Bulunmuyor</h3>
-                <p className="text-neutral-500 max-w-md mb-6">
-                  {searchQuery || filterHotelId 
-                    ? "Aramanızla eşleşen sonuç bulunamadı. Lütfen farklı bir arama terimi deneyin veya filtrelerinizi temizleyin."
-                    : "Henüz sisteme eklenmiş oda bulunmuyor. 'Yeni Oda Ekle' butonuna tıklayarak oda ekleyebilirsiniz."}
-                </p>
-                <div className="flex gap-3">
-                  {(searchQuery || filterHotelId) && (
-                    <Button variant="outline" onClick={() => {
-                      setSearchQuery('');
-                      setFilterHotelId(null);
-                    }}>
-                      Filtreleri Temizle
-                    </Button>
-                  )}
-                  <Button onClick={() => window.location.href = "/admin/rooms/add"}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Yeni Oda Ekle
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-8">
-              {filteredHotelIds.map(hotelId => {
-                const hotel = hotels.find(h => h.id === hotelId);
-                const hotelRooms = groupedRooms[hotelId];
-                // Oda tipine göre grupla
-                const roomsByType = groupRoomsByType(hotelRooms);
-                
-                return (
-                  <Card key={hotelId} className="overflow-hidden border-[#2094f3]/50">
-                    <CardHeader className="bg-gradient-to-r from-[#2094f3]/10 to-transparent">
-                      <div className="flex items-center">
-                        <Building className="h-5 w-5 mr-2 text-[#2094f3]" />
-                        <CardTitle>{getHotelNameById(hotelId)}</CardTitle>
-                      </div>
-                      <CardDescription>
-                        Toplam {hotelRooms.length} oda - {Object.keys(roomsByType).length} farklı oda tipi
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid gap-4 pt-6">
-                      {Object.entries(roomsByType).map(([type, rooms]) => (
-                        <div key={type} className="border rounded-lg overflow-hidden">
-                          <div className="bg-neutral-100 dark:bg-neutral-800 px-4 py-2 font-medium flex justify-between items-center">
-                            <div className="flex items-center">
-                              <BedDouble className="h-4 w-4 mr-2 text-neutral-500" />
-                              <span>{type}</span>
-                              <Badge variant="outline" className="ml-2">
-                                {rooms.length} oda
-                              </Badge>
-                            </div>
-                          </div>
-                          <div className="p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {rooms.map(room => (
-                              <div key={room.id} className="border rounded-md overflow-hidden bg-white dark:bg-neutral-950 hover:shadow-md transition-shadow">
-                                <div className="flex items-start h-full">
-                                  <div className="w-24 h-24 shrink-0">
-                                    <img
-                                      src={room.imageUrl || "https://via.placeholder.com/150x150?text=Oda"}
-                                      alt={room.name}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                  <div className="flex-1 p-3 flex flex-col justify-between h-full">
-                                    <div>
-                                      <h3 className="font-medium text-base">{room.name}</h3>
-                                      <div className="flex items-center text-sm text-neutral-500 mt-1">
-                                        <Users className="h-3.5 w-3.5 mr-1" />
-                                        <span>{room.capacity} Kişilik</span>
-                                      </div>
-                                    </div>
-                                    <div className="flex justify-end mt-2 space-x-2">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-8 border-[#2094f3] text-[#2094f3] hover:bg-[#2094f3]/10"
-                                        onClick={() => window.location.href = `/admin/rooms/edit/${room.id}`}
-                                      >
-                                        <Pencil className="h-3.5 w-3.5 mr-1" />
-                                        Düzenle
-                                      </Button>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-8 border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
-                                        onClick={() => openDeleteDialog(room)}
-                                      >
-                                        <Trash2 className="h-3.5 w-3.5 mr-1" />
-                                        Sil
-                                      </Button>
-                                    </div>
-                                  </div>
+        </div>
+      </div>
+      <div className="p-4 pb-32">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-[60vh]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+        ) : (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <Tabs defaultValue="details" className="w-full" value={activeTab} onValueChange={setActiveTab}>
+                {/* ...details, features tabları buraya... */}
+                <TabsContent value="pricing" className="space-y-8">
+                  {/* TAKVİM ve FİYAT BÖLÜMÜ */}
+                  <div className="rounded-2xl shadow-lg p-4 bg-white/95 space-y-4">
+                    <div className="font-semibold text-lg text-center mb-1">Tarihlere Fiyat Ekle</div>
+                    <div className="text-xs text-gray-500 text-center mb-3">Takvimden bir tarih aralığı seçin ve fiyatı girin. <br/>Hafta günleri için özel fiyat aşağıda.</div>
+                    {/* Takvim */}
+                    <Popover open={true}>
+                      <PopoverContent className="w-auto p-0 rounded-2xl shadow-lg mx-auto" align="center">
+                        <Calendar
+                          mode="range"
+                          selected={selectedRange}
+                          onSelect={(range: { from?: Date, to?: Date } | undefined) => {
+                            setSelectedRange({ from: range?.from ?? null, to: range?.to ?? null });
+                          }}
+                          onDayClick={date => setCalendarSelectedDay(date)}
+                          components={{
+                            DayContent: (props: { date: Date }) => {
+                              const price = getPriceForDate(props.date);
+                              return (
+                                <div className="relative h-9 w-9 flex flex-col items-center justify-center">
+                                  <span>{props.date.getDate()}</span>
+                                  {price && (
+                                    <span className="absolute bottom-0 left-0 right-0 text-[9px] text-[#2094f3] font-semibold">{price}₺</span>
+                                  )}
                                 </div>
-                              </div>
-                            ))}
-                          </div>
+                              );
+                            }
+                          }}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    {/* Seçili günün fiyatı */}
+                    {calendarSelectedDay && (
+                      <div className="rounded-xl bg-blue-50 text-[#2094f3] text-center text-base font-bold py-1 shadow">
+                        {calendarSelectedDay.toLocaleDateString("tr-TR")} :&nbsp;
+                        {getPriceForDate(calendarSelectedDay) ? `${getPriceForDate(calendarSelectedDay)}₺` : "Fiyat Yok"}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 mt-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        placeholder="Fiyat (₺)"
+                        value={rangePrice}
+                        onChange={e => setRangePrice(Number(e.target.value))}
+                        className="rounded-xl shadow w-full"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleAddRangePrice}
+                        className="rounded-xl px-4 py-2 font-bold bg-gradient-to-r from-[#2094f3] to-[#38b6ff] text-white shadow hover:scale-105 transition"
+                        disabled={!selectedRange.from || !selectedRange.to || rangePrice <= 0}
+                      >Tüm Aralığa Ata</Button>
+                    </div>
+                  </div>
+                  {/* Haftanın günlerine fiyat ekleme */}
+                  <div className="rounded-2xl shadow-lg p-4 bg-white/90 space-y-2">
+                    <div className="font-semibold text-base text-center">Haftanın Günleri İçin Fiyat</div>
+                    <div className="flex flex-wrap justify-center gap-2 mt-2">
+                      {weekdays.map(day => (
+                        <div key={day.index} className="flex flex-col items-center">
+                          <span className="text-xs font-medium text-gray-700">{day.name}</span>
+                          <Input
+                            type="number"
+                            min="0"
+                            placeholder="₺"
+                            value={weekdayPrices.find(w => w.dayIndex === day.index)?.price ?? ""}
+                            onChange={e => handleAddWeekdayPrice(day.index, Number(e.target.value))}
+                            className="w-20 h-9 rounded-xl text-center shadow"
+                          />
                         </div>
                       ))}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-
-          <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Odayı Sil</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Bu odayı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>İptal</AlertDialogCancel>
-                <AlertDialogAction
-                  className="bg-red-600 hover:bg-red-700"
-                  onClick={handleDelete}
-                  disabled={deleteRoomMutation.isPending}
-                >
-                  {deleteRoomMutation.isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  Odayı Sil
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </main>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+              {/* ...Altta sabit Kaydet/İptal butonları... */}
+              <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-neutral-800 p-4 shadow-[0_-2px_10px_rgba(0,0,0,0.07)] flex gap-2 z-20 rounded-t-2xl">
+                <Button type="button" variant="outline" className="flex-1 h-12 rounded-xl" onClick={() => navigate("/admin/rooms")}>İptal</Button>
+                <Button type="submit" className="flex-1 h-12 rounded-xl bg-gradient-to-r from-[#2094f3] to-[#38b6ff] text-white font-bold shadow-lg">
+                  {updateRoomMutation.isPending ? (<Loader2 className="mr-2 h-5 w-5 animate-spin" />) : (<Save className="mr-2 h-5 w-5" />)}
+                  Kaydet
+                </Button>
+              </div>
+            </form>
+          </Form>
+        )}
+      </div>
     </div>
   );
 }

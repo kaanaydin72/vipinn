@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useDeviceType } from "@/hooks/use-mobile";
 import { Wifi, Bed, Coffee, Bath, Check, Snowflake, Tv, Moon, Building2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { eachDayOfInterval, format } from "date-fns"; // EKLENDİ
 
 interface RoomCardProps {
   room: Room & {
@@ -68,9 +69,37 @@ export default function RoomCard({
   }
 
   const pricePerNight = defaultNightlyPrice || 0;
+
+  // --- GÜNCEL TOPLAM FİYAT HESAPLAMA FONKSİYONU ---
+  const getTotalPrice = () => {
+    // Eğer kullanıcı tarih aralığı seçmediyse eski hesaplama
+    if (!bookingInfo?.dateRange?.from || !bookingInfo?.dateRange?.to) {
+      return pricePerNight * (room.nightCount || 1);
+    }
+    // Tarih aralığındaki her günü bul
+    const days = eachDayOfInterval({ start: bookingInfo.dateRange.from, end: bookingInfo.dateRange.to });
+    let total = 0;
+    days.forEach(date => {
+      const dateStr = format(date, "yyyy-MM-dd");
+      // Öncelik: Takvimde kaydedilmiş günlük fiyat
+      const found = dailyPricesArray.find(p => p.date === dateStr);
+      if (found) {
+        total += found.price;
+      } else {
+        // Eğer o günün fiyatı yoksa haftalık fiyatı al
+        const dayOfWeek = date.getDay();
+        const weekly = weekdayPricesArray.find(p => p.day === dayOfWeek);
+        total += weekly ? weekly.price : pricePerNight;
+      }
+    });
+    return total;
+  };
+
+  // --- displayPrice satırı güncellendi ---
   const displayPrice = hasPriceForSelectedDates
-    ? (totalPrice > 0 ? totalPrice : pricePerNight * (room.nightCount || 1))
+    ? (totalPrice > 0 ? totalPrice : getTotalPrice())
     : pricePerNight;
+
   const displayOldPrice = hasPriceForSelectedDates ? Math.round(displayPrice * 1.15) : Math.round(pricePerNight * 1.15);
 
   const { data: hotel } = useQuery({
