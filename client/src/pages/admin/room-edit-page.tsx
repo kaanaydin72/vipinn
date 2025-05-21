@@ -20,11 +20,11 @@ import {
   Tabs, TabsContent, TabsList, TabsTrigger,
 } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Loader2, Check, X, ChevronLeft, Image, UploadCloud } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { format } from "date-fns";
+import { format, isSameDay, addDays } from "date-fns";
 import { tr } from 'date-fns/locale';
 import * as z from "zod";
 import { useRoute, useLocation } from "wouter";
@@ -44,7 +44,6 @@ const availableFeatures = [
   { id: "ikiYatakOdasi", label: "2 Yatak Odası" },
   { id: "ikiBanyo", label: "2 Banyo" },
 ];
-
 const roomTypes = [
   { id: "standart", label: "Standart Oda" },
   { id: "deluxe", label: "Deluxe Oda" },
@@ -52,15 +51,21 @@ const roomTypes = [
   { id: "aile", label: "Aile Odası" },
 ];
 
+const weekDayNames = [
+  "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"
+];
+
 // --- Zod form şeması ---
 const roomFormSchema = insertRoomSchema.extend({
   features: z.array(z.string()).min(1, { message: "En az bir özellik seçmelisiniz" }),
   hotelId: z.coerce.number(),
+  dailyPrices: z.any().optional(),
+  weekdayPrices: z.any().optional(),
+  images: z.any().optional(),
 });
 type RoomFormValues = z.infer<typeof roomFormSchema>;
-type DailyPrice = { date: Date; price: number };
+type DailyPrice = { date: string; price: number };
 type WeekdayPrice = { dayIndex: number; price: number };
-type DateRange = { startDate: Date; endDate: Date };
 
 // --- Oda sayısı uyarısı animasyonu ---
 function RoomCountWarning({ count }: { count: number }) {
@@ -73,6 +78,9 @@ function RoomCountWarning({ count }: { count: number }) {
   return null;
 }
 
+// Takvim componenti
+const Calendar = (props: any) => <CalendarComponent {...props} />;
+
 export default function RoomsEditPage() {
   const [match, params] = useRoute("/admin/rooms/edit/:id");
   const { toast } = useToast();
@@ -80,16 +88,19 @@ export default function RoomsEditPage() {
 
   // --- Takvim ve fiyatlar state ---
   const [activeTab, setActiveTab] = useState("details");
+
+  // Tüm fiyat state'leri string formatta saklanır (date-string uyumlu)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedDatePrice, setSelectedDatePrice] = useState<number>(0);
   const [dailyPrices, setDailyPrices] = useState<DailyPrice[]>([]);
   const [selectedWeekday, setSelectedWeekday] = useState<number>(0);
   const [selectedWeekdayPrice, setSelectedWeekdayPrice] = useState<number>(0);
   const [weekdayPrices, setWeekdayPrices] = useState<WeekdayPrice[]>([]);
+
   const today = new Date();
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const [dateRange, setDateRange] = useState<DateRange>({ startDate: today, endDate: tomorrow });
+  const [dateRange, setDateRange] = useState<{ startDate: Date, endDate: Date }>({ startDate: today, endDate: tomorrow });
 
   // --- Resim yükleme state ---
   const [images, setImages] = useState<{ url: string, filename: string, isMain: boolean }[]>([]);
@@ -100,12 +111,10 @@ export default function RoomsEditPage() {
   const [calendarMode, setCalendarMode] = useState<CalendarMode>('single');
 
   // --- Otel listesi çek ---
-  const { data: hotels = [], isLoading: isLoadingHotels } = useQuery<Hotel[]>({
-    queryKey: ['/api/hotels'],
-  });
+  const { data: hotels = [] } = useQuery<Hotel[]>({ queryKey: ['/api/hotels'] });
 
   // --- Oda detayını çek ---
-  const { data: room, isLoading: isLoadingRoom } = useQuery<Room>({
+  const { data: room } = useQuery<Room>({
     queryKey: ['/api/rooms', params?.id],
     queryFn: async () => {
       if (!params?.id) throw new Error("ID yok");
@@ -146,7 +155,7 @@ export default function RoomsEditPage() {
     // Günlük fiyatlar
     let parsedDailyPrices: DailyPrice[] = [];
     try {
-      parsedDailyPrices = room.dailyPrices ? JSON.parse(room.dailyPrices).map((d: any) => ({ date: new Date(d.date), price: d.price })) : [];
+      parsedDailyPrices = room.dailyPrices ? JSON.parse(room.dailyPrices) : [];
     } catch { parsedDailyPrices = []; }
     setDailyPrices(parsedDailyPrices);
     // Haftalık fiyatlar
@@ -202,7 +211,6 @@ export default function RoomsEditPage() {
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
-
   const setMainImage = (index: number) => {
     const updatedImages = images.map((img, i) => ({ ...img, isMain: i === index }));
     setImages(updatedImages);
@@ -210,7 +218,6 @@ export default function RoomsEditPage() {
     if (mainImage) form.setValue('imageUrl', mainImage.url);
     toast({ title: "Ana resim güncellendi" });
   };
-
   const removeImage = (index: number) => {
     const wasMain = images[index].isMain;
     const updatedImages = images.filter((_, i) => i !== index);
@@ -224,38 +231,38 @@ export default function RoomsEditPage() {
   };
 
   // --- Takvim fiyat fonksiyonları ---
+  // String tarih kullanılır!
   const addDailyPrice = () => {
     if (!selectedDate || selectedDatePrice <= 0) return;
-    const existingIndex = dailyPrices.findIndex(
-      dp => dp.date.toDateString() === selectedDate.toDateString()
-    );
+    const dateString = format(selectedDate, "yyyy-MM-dd");
+    const existingIndex = dailyPrices.findIndex(dp => dp.date === dateString);
     if (existingIndex >= 0) {
       const updatedPrices = [...dailyPrices];
-      updatedPrices[existingIndex] = { date: selectedDate, price: selectedDatePrice };
+      updatedPrices[existingIndex] = { date: dateString, price: selectedDatePrice };
       setDailyPrices(updatedPrices);
       toast({ title: "Fiyat güncellendi" });
     } else {
-      setDailyPrices([...dailyPrices, { date: selectedDate, price: selectedDatePrice }]);
+      setDailyPrices([...dailyPrices, { date: dateString, price: selectedDatePrice }]);
       toast({ title: "Fiyat eklendi" });
     }
     setSelectedDatePrice(0);
   };
-  const removeDailyPrice = (dateToRemove: Date) => {
-    setDailyPrices(dailyPrices.filter(dp => dp.date.toDateString() !== dateToRemove.toDateString()));
+  const removeDailyPrice = (dateToRemove: string) => {
+    setDailyPrices(dailyPrices.filter(dp => dp.date !== dateToRemove));
   };
-  const addDateRangePrice = (range: DateRange, price: number) => {
+  const addDateRangePrice = (range: { startDate: Date, endDate: Date }, price: number) => {
     if (price <= 0) return;
     const newPrices: DailyPrice[] = [];
-    const current = new Date(range.startDate);
-    while (current <= range.endDate) {
-      newPrices.push({ date: new Date(current), price: price });
-      current.setDate(current.getDate() + 1);
+    let current = new Date(range.startDate);
+    const end = new Date(range.endDate);
+    while (current <= end) {
+      const dateString = format(current, "yyyy-MM-dd");
+      newPrices.push({ date: dateString, price });
+      current = addDays(current, 1);
     }
     const updatedPrices = [...dailyPrices];
     for (const newPrice of newPrices) {
-      const existingIndex = updatedPrices.findIndex(
-        dp => dp.date.toDateString() === newPrice.date.toDateString()
-      );
+      const existingIndex = updatedPrices.findIndex(dp => dp.date === newPrice.date);
       if (existingIndex >= 0) updatedPrices[existingIndex] = newPrice;
       else updatedPrices.push(newPrice);
     }
@@ -288,7 +295,7 @@ export default function RoomsEditPage() {
       const imagesData = images.map(img => ({ url: img.url, filename: img.filename, isMain: img.isMain }));
       const response = await apiRequest("PUT", `/api/rooms/${params?.id}`, {
         ...data,
-        dailyPrices: JSON.stringify(dailyPrices.map(d => ({ date: d.date, price: d.price }))),
+        dailyPrices: JSON.stringify(dailyPrices),
         weekdayPrices: JSON.stringify(weekdayPrices),
         images: JSON.stringify(imagesData),
       });
@@ -313,6 +320,19 @@ export default function RoomsEditPage() {
   const deviceType = useDeviceType();
   const maxWidthClass = deviceType === 'mobile' ? 'max-w-3xl' : 'max-w-5xl';
 
+  // TAKVİMDE fiyatı göstermek için
+  const renderDayContent = (day: Date) => {
+    const price = dailyPrices.find((p) => isSameDay(new Date(p.date), day))?.price;
+    return (
+      <div className="flex flex-col items-center cursor-pointer">
+        <span className="font-semibold">{day.getDate()}</span>
+        {typeof price === "number" && !isNaN(price) &&
+          <span className="text-[11px] font-bold text-white px-2 mt-1 rounded-full bg-[#2094f3]">{price}₺</span>
+        }
+      </div>
+    );
+  };
+
   return (
     <div className={`container mx-auto py-4 ${maxWidthClass}`}>
       <div className="mb-4 flex items-center">
@@ -324,12 +344,8 @@ export default function RoomsEditPage() {
       <div className="bg-white rounded-lg shadow-sm border">
         <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full grid grid-cols-2 p-0 bg-gray-50 rounded-t-lg">
-            <TabsTrigger value="details" className="py-3 rounded-none rounded-tl-lg">
-              Oda Bilgileri
-            </TabsTrigger>
-            <TabsTrigger value="pricing" className="py-3 rounded-none rounded-tr-lg">
-              Fiyatlandırma
-            </TabsTrigger>
+            <TabsTrigger value="details" className="py-3 rounded-none rounded-tl-lg">Oda Bilgileri</TabsTrigger>
+            <TabsTrigger value="pricing" className="py-3 rounded-none rounded-tr-lg">Fiyatlandırma</TabsTrigger>
           </TabsList>
           <TabsContent value="details" className="p-4">
             <Form {...form}>
@@ -340,10 +356,7 @@ export default function RoomsEditPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Otel</FormLabel>
-                      <Select
-                        onValueChange={(value) => field.onChange(parseInt(value))}
-                        value={field.value?.toString()}
-                      >
+                      <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
                         <FormControl>
                           <SelectTrigger className="h-12">
                             <SelectValue placeholder="Otel seçin" />
@@ -433,9 +446,7 @@ export default function RoomsEditPage() {
                         </FormControl>
                         <SelectContent>
                           {roomTypes.map((type) => (
-                            <SelectItem key={type.id} value={type.id}>
-                              {type.label}
-                            </SelectItem>
+                            <SelectItem key={type.id} value={type.id}>{type.label}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -581,7 +592,7 @@ export default function RoomsEditPage() {
                       locale={tr}
                       className="mx-auto"
                       disabled={(date: Date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                      modifiers={{ highlighted: dailyPrices.map(dp => dp.date) }}
+                      modifiers={{ highlighted: dailyPrices.map(dp => new Date(dp.date)) }}
                       modifiersStyles={{
                         highlighted: {
                           fontWeight: "bold",
@@ -590,6 +601,7 @@ export default function RoomsEditPage() {
                           borderColor: "#2094f3"
                         }
                       }}
+                      renderDay={renderDayContent}
                     />
                   </div>
                   <div className="space-y-4">
@@ -638,7 +650,7 @@ export default function RoomsEditPage() {
                       className="mx-auto"
                       disabled={(date: Date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                       numberOfMonths={1}
-                      modifiers={{ highlighted: dailyPrices.map(dp => dp.date) }}
+                      modifiers={{ highlighted: dailyPrices.map(dp => new Date(dp.date)) }}
                       modifiersStyles={{
                         highlighted: {
                           fontWeight: "bold",
@@ -687,13 +699,9 @@ export default function RoomsEditPage() {
                           <SelectValue placeholder="Gün seçin" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="0">Pazar</SelectItem>
-                          <SelectItem value="1">Pazartesi</SelectItem>
-                          <SelectItem value="2">Salı</SelectItem>
-                          <SelectItem value="3">Çarşamba</SelectItem>
-                          <SelectItem value="4">Perşembe</SelectItem>
-                          <SelectItem value="5">Cuma</SelectItem>
-                          <SelectItem value="6">Cumartesi</SelectItem>
+                          {["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"].map((name, idx) =>
+                            <SelectItem value={idx.toString()} key={idx}>{name}</SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
@@ -744,11 +752,11 @@ export default function RoomsEditPage() {
                 <div className="text-sm font-medium mb-2">Eklenen Özel Fiyatlar:</div>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {dailyPrices
-                    .sort((a, b) => a.date.getTime() - b.date.getTime())
+                    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                     .map((dp, index) => (
                       <div key={index} className="flex items-center justify-between bg-neutral-50 p-2 rounded">
                         <div className="text-sm">
-                          <span className="font-medium">{format(dp.date, 'PP', { locale: tr })}</span>
+                          <span className="font-medium">{format(new Date(dp.date), 'PP', { locale: tr })}</span>
                           <span className="ml-2 text-[#2094f3] font-semibold">{dp.price} ₺</span>
                         </div>
                         <Button

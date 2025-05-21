@@ -9,10 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { useDeviceType } from "@/hooks/use-mobile";
-import { Calendar as CalendarIcon, Building2, ArrowDownUp, ArrowUp, ArrowDown, Search, CalendarRange, Filter, Store } from "lucide-react";
+import { Calendar as CalendarIcon, ArrowUp, ArrowDown, Store } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Calendar } from "@/components/ui/calendar";
-import { format, addDays } from "date-fns";
+import { format, addDays, isValid, differenceInCalendarDays } from "date-fns";
 import { tr } from "date-fns/locale";
 import {
   Popover,
@@ -22,9 +22,7 @@ import {
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -37,9 +35,6 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import {
-  Slider 
-} from "@/components/ui/slider";
 
 export default function HomePage() {
   const { t } = useTranslation();
@@ -54,61 +49,48 @@ export default function HomePage() {
   const deviceType = useDeviceType();
   const isMobile = deviceType === 'mobile';
   const [, setLocation] = useLocation();
-  
+
   // State for date range selection
   const [startDate, setStartDate] = useState<Date | undefined>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>(addDays(new Date(), 1));
-  
+
   // State for hotels filtering
   const [selectedHotelId, setSelectedHotelId] = useState<number | null>(null);
-  
-  // State for price filtering
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
+
+  // State for sorting
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
-  
-  // Sabit bir fiyat aralığı kullan, takvim bazlı fiyatlandırma olduğu için
-  const minPrice = 0;
-  const maxPrice = 10000;
-  
-  useEffect(() => {
-    // Set initial price range based on available rooms
-    if (rooms.length > 0 && priceRange[0] === 0 && priceRange[1] === 10000) {
-      setPriceRange([minPrice, maxPrice]);
-    }
-  }, [rooms, minPrice, maxPrice]);
-  
-  // Filter and sort rooms - fiyat kontrolü kullanmadan
+
+  // Gece sayısı hesaplama (giriş ve çıkış tarihi seçili ise)
+  const nightCount = (startDate && endDate && isValid(startDate) && isValid(endDate))
+    ? Math.max(1, differenceInCalendarDays(endDate, startDate))
+    : 1;
+
+  // RoomCard için dateRange bilgisi (hem gece hem fiyat için kullanılacak)
+  const dateRange = (startDate && endDate) ? { from: startDate, to: endDate } : undefined;
+
+  // Filtrelenmiş ve sıralanmış oda listesi
   const filteredRooms = rooms
     .filter(room => {
       const matchesHotel = selectedHotelId ? room.hotelId === selectedHotelId : true;
       return matchesHotel;
     })
     .sort((a, b) => {
-      // Fiyatlandırma takvim bazlı olduğundan, oda kapasitesine göre sırala
       const aCapacity = a.capacity || 0;
       const bCapacity = b.capacity || 0;
-      
       if (sortOrder === 'asc') {
         return aCapacity - bCapacity;
       } else {
         return bCapacity - aCapacity;
       }
     });
-  
-  const hotelOptions = hotels.map(hotel => ({
-    id: hotel.id,
-    name: hotel.name,
-    stars: hotel.stars
-  }));
-    
+
   // Get hotel name by ID
   const getHotelName = (hotelId: number) => {
     return hotels.find(h => h.id === hotelId)?.name || '';
   };
-  
+
   return (
-    <MainLayout>      
+    <MainLayout>
       <main className="flex-grow bg-neutral-50">
         {/* Hero Section */}
         <section className="relative bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3')" }}>
@@ -123,7 +105,7 @@ export default function HomePage() {
             </Button>
           </div>
         </section>
-        
+
         {/* Calendar and Date Selection */}
         <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16">
           <Card className="shadow-xl overflow-hidden border-2 border-[#2094f3]">
@@ -134,8 +116,8 @@ export default function HomePage() {
                     <Label htmlFor="hotel" className="text-sm">Şube</Label>
                     <div className="relative">
                       <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-                      <Select 
-                        value={selectedHotelId?.toString() || 'all'} 
+                      <Select
+                        value={selectedHotelId?.toString() || 'all'}
                         onValueChange={(value) => setSelectedHotelId(value !== 'all' ? parseInt(value) : null)}
                       >
                         <SelectTrigger id="hotel" className="pl-10 border-2 border-[#2094f3] h-12">
@@ -152,10 +134,9 @@ export default function HomePage() {
                       </Select>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-1">
                     <Label htmlFor="date-range" className="text-sm">Tarih Aralığı</Label>
-                    
                     {/* Desktop Tarih Seçici */}
                     {!isMobile && (
                       <div className="w-full">
@@ -194,9 +175,7 @@ export default function HomePage() {
                               }]}
                             />
                             <div className="p-2 flex justify-center">
-                              <Button
-                                className="bg-[#2094f3] text-white hover:bg-[#2094f3]/90 w-full"
-                              >
+                              <Button className="bg-[#2094f3] text-white hover:bg-[#2094f3]/90 w-full">
                                 Tarihleri Onayla
                               </Button>
                             </div>
@@ -204,7 +183,7 @@ export default function HomePage() {
                         </Popover>
                       </div>
                     )}
-                    
+
                     {/* Mobile Tarih Seçici */}
                     {isMobile && (
                       <div className="w-full">
@@ -238,7 +217,6 @@ export default function HomePage() {
                                 locale={tr}
                                 className="w-full bg-white dark:bg-neutral-900 rounded-lg"
                                 disabled={[(date) => {
-                                  // Sadece geçmiş tarihleri devre dışı bırak
                                   const today = new Date();
                                   today.setHours(0, 0, 0, 0);
                                   return date < today;
@@ -257,20 +235,20 @@ export default function HomePage() {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="space-y-1">
                     <Label htmlFor="sort-order" className="text-sm">Oda Kapasitesi</Label>
                     <div className="grid grid-cols-2 gap-2 h-12">
-                      <Button 
-                        variant={sortOrder === 'asc' ? "default" : "outline"} 
+                      <Button
+                        variant={sortOrder === 'asc' ? "default" : "outline"}
                         onClick={() => setSortOrder('asc')}
                         className={`border-2 ${sortOrder === 'asc' ? "bg-[#2094f3] text-white" : "border-[#2094f3] text-[#2094f3]"}`}
                       >
                         <ArrowUp className="h-4 w-4 mr-1" />
                         <span className="text-sm">En Az Yatak</span>
                       </Button>
-                      <Button 
-                        variant={sortOrder === 'desc' ? "default" : "outline"} 
+                      <Button
+                        variant={sortOrder === 'desc' ? "default" : "outline"}
                         onClick={() => setSortOrder('desc')}
                         className={`border-2 ${sortOrder === 'desc' ? "bg-[#2094f3] text-white" : "border-[#2094f3] text-[#2094f3]"}`}
                       >
@@ -280,19 +258,17 @@ export default function HomePage() {
                     </div>
                   </div>
                 </div>
-                
-                {/* Ara butonu kaldırıldı */}
               </div>
             </CardContent>
           </Card>
         </section>
-        
+
         {/* Room List */}
         <section className="py-6 px-4">
           <div className="max-w-6xl mx-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-neutral-800">
-                {t('available_rooms', 'Uygun Odalar')} 
+                {t('available_rooms', 'Uygun Odalar')}
                 {selectedHotelId && ` - ${getHotelName(selectedHotelId)}`}
               </h2>
               <div className="flex items-center gap-2">
@@ -307,7 +283,7 @@ export default function HomePage() {
                 </Badge>
               </div>
             </div>
-            
+
             {isLoadingRooms ? (
               <div className="space-y-4 animate-pulse">
                 {Array(4).fill(0).map((_, i) => (
@@ -320,25 +296,19 @@ export default function HomePage() {
                   const hotel = hotels.find(h => h.id === room.hotelId);
                   return (
                     <div key={room.id} className="relative">
-
-                      <RoomCard 
+                      <RoomCard
                         room={{
                           ...room,
-                          nightCount: endDate && startDate ? 
-                            Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) : 
-                            1
-                        }} 
-                        showDetailButton={true} // Ana sayfada detay butonunu göster
-                        showBookButton={true} // Rezervasyon butonunu göster
-                        onSelect={() => {
-                          // Oda seçildiğindeki işlemler
+                        }}
+                        showDetailButton={true}
+                        showBookButton={true}
+                        bookingInfo={{
+                          dateRange,
+                          nightCount,
                         }}
                         onBook={(roomId) => {
-                          // Rezervasyon sayfasına yönlendirme - tarih ve misafir bilgisi de ekle
                           const checkIn = startDate ? format(startDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
                           const checkOut = endDate ? format(endDate, 'yyyy-MM-dd') : format(new Date(Date.now() + 86400000), 'yyyy-MM-dd');
-                          
-                          // Doğrudan window.location kullanarak yönlendirme yap
                           window.location.href = `/reservations/new?roomId=${roomId}&hotelId=${room.hotelId}&checkIn=${checkIn}&checkOut=${checkOut}&adults=2&children=0`;
                         }}
                       />

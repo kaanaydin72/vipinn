@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Room } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import { 
+import {
   Form,
   FormControl,
   FormField,
@@ -20,15 +20,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
-import { format } from "date-fns";
+import { format, eachDayOfInterval, addDays } from "date-fns";
 import { Calendar as CalendarIcon, Check, Loader2 } from "lucide-react";
 import { tr } from "date-fns/locale";
 import { z } from "zod";
@@ -63,51 +62,75 @@ export default function ReservationForm({ hotelId, room, onSuccess }: Reservatio
   const { user } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
-  
-  // Using a fixed price - 999 TL per night
-  const [nights, setNights] = useState(1);
-  
-  // Calculate total price based on fixed price and nights
-  const calculateTotalPrice = () => {
-    return 999 * nights;
-  };
-  
+
+  // Oda fiyatları arraylerini hazırla
+  let dailyPricesArray: any[] = [];
+  let weekdayPricesArray: any[] = [];
+
+  try {
+    if (room.dailyPrices) dailyPricesArray = JSON.parse(room.dailyPrices);
+    if (room.weekdayPrices) weekdayPricesArray = JSON.parse(room.weekdayPrices);
+  } catch (e) {
+    dailyPricesArray = [];
+    weekdayPricesArray = [];
+  }
+
+  // Form setup
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       checkIn: new Date(),
-      checkOut: new Date(new Date().setDate(new Date().getDate() + 1)),
+      checkOut: addDays(new Date(), 1),
       guests: 2,
     },
   });
-  
-  // Watch for changes to check-in and check-out dates
+
+  // Watch dates
   const watchCheckIn = form.watch("checkIn");
   const watchCheckOut = form.watch("checkOut");
-  
-  // Recalculate nights whenever dates change
-  useEffect(() => {
-    if (watchCheckIn && watchCheckOut) {
-      const checkInDate = new Date(watchCheckIn);
-      const checkOutDate = new Date(watchCheckOut);
-      const diffTime = Math.abs(checkOutDate.getTime() - checkInDate.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (diffDays > 0) {
-        setNights(diffDays);
+
+  // Gece sayısı hesapla
+  const nightCount = useMemo(() => {
+    if (!watchCheckIn || !watchCheckOut) return 1;
+    const diffTime = watchCheckOut.getTime() - watchCheckIn.getTime();
+    const diffDays = Math.max(Math.round(diffTime / (1000 * 60 * 60 * 24)), 1);
+    return diffDays;
+  }, [watchCheckIn, watchCheckOut]);
+
+  // Tüm geceler için fiyat ve müsaitlik hesapla
+  const { totalPrice, priceForAllDays, unavailableDate } = useMemo(() => {
+    if (!watchCheckIn || !watchCheckOut) return { totalPrice: 0, priceForAllDays: true, unavailableDate: null };
+    const days = eachDayOfInterval({ start: watchCheckIn, end: addDays(watchCheckOut, -1) }); // checkOut günü konaklama değildir!
+    let total = 0;
+    let allAvailable = true;
+    let firstUnavailable = null;
+
+    for (let i = 0; i < days.length; i++) {
+      const date = days[i];
+      const dateStr = format(date, "yyyy-MM-dd");
+      const found = dailyPricesArray.find((p) => p.date === dateStr);
+      if (found) {
+        total += found.price;
       } else {
-        setNights(1); // Default to at least 1 night
+        // Haftalık fiyatı bul
+        const dayOfWeek = date.getDay();
+        const weekly = weekdayPricesArray.find((p) => p.day === dayOfWeek);
+        if (weekly) {
+          total += weekly.price;
+        } else {
+          allAvailable = false;
+          firstUnavailable = dateStr;
+          break;
+        }
       }
     }
-  }, [watchCheckIn, watchCheckOut]);
-  
+    return { totalPrice: total, priceForAllDays: allAvailable, unavailableDate: firstUnavailable };
+  }, [watchCheckIn, watchCheckOut, dailyPricesArray, weekdayPricesArray]);
+
+  // Rezervasyon kaydı
   const reservation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
-      if (!user) {
-        throw new Error("Rezervasyon yapmak için giriş yapmalısınız");
-      }
-      
-      const total = 999 * nights;
+      if (!user) throw new Error("Rezervasyon yapmak için giriş yapmalısınız");
       const reservationData = {
         userId: user.id,
         roomId: room.id,
@@ -115,10 +138,9 @@ export default function ReservationForm({ hotelId, room, onSuccess }: Reservatio
         checkIn: values.checkIn,
         checkOut: values.checkOut,
         guests: values.guests,
-        totalPrice: total,
-        status: "pending"
+        totalPrice,
+        status: "pending",
       };
-      
       const res = await apiRequest("POST", "/api/reservations", reservationData);
       return await res.json();
     },
@@ -139,7 +161,7 @@ export default function ReservationForm({ hotelId, room, onSuccess }: Reservatio
       });
     },
   });
-  
+
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     if (!user) {
       toast({
@@ -150,10 +172,12 @@ export default function ReservationForm({ hotelId, room, onSuccess }: Reservatio
       navigate("/auth");
       return;
     }
-    
     reservation.mutate(values);
   };
-  
+
+  // Oda tükendi mi? (roomCount kontrolü + fiyat kontrolü)
+  const roomSoldOut = room.roomCount === 0 || !priceForAllDays;
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -197,7 +221,7 @@ export default function ReservationForm({ hotelId, room, onSuccess }: Reservatio
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="checkOut"
@@ -226,7 +250,8 @@ export default function ReservationForm({ hotelId, room, onSuccess }: Reservatio
                         selected={field.value}
                         onSelect={field.onChange}
                         disabled={(date) =>
-                          date <= watchCheckIn || date < new Date(new Date().setHours(0, 0, 0, 0))
+                          date <= watchCheckIn ||
+                          date < new Date(new Date().setHours(0, 0, 0, 0))
                         }
                         initialFocus
                       />
@@ -237,7 +262,7 @@ export default function ReservationForm({ hotelId, room, onSuccess }: Reservatio
               )}
             />
           </div>
-          
+
           <FormField
             control={form.control}
             name="guests"
@@ -267,31 +292,53 @@ export default function ReservationForm({ hotelId, room, onSuccess }: Reservatio
             )}
           />
         </div>
-        
-        {/* Direct pricing display, no conditionals */}
+
+        {/* Fiyat ve uygunluk alanı */}
         <div className="pt-4 border-t border-border">
           <div className="flex justify-between mb-2">
             <span className="text-muted-foreground">Oda Ücreti (gece başına)</span>
-            <span>999 ₺</span>
+            <span>
+              {roomSoldOut
+                ? "—"
+                : totalPrice && nightCount
+                  ? `${Math.round(totalPrice / nightCount).toLocaleString()} ₺`
+                  : "—"}
+            </span>
           </div>
           <div className="flex justify-between mb-2">
             <span className="text-muted-foreground">Konaklama süresi</span>
-            <span>{nights} gece</span>
+            <span>{nightCount} gece</span>
           </div>
           <div className="flex justify-between font-medium text-lg pt-2 border-t border-border">
             <span>Toplam</span>
-            <span className="text-primary">{(999 * nights).toLocaleString()} ₺</span>
+            <span className="text-primary">
+              {roomSoldOut ? (
+                <span className="text-red-600 font-semibold">Oda tükendi</span>
+              ) : (
+                `${totalPrice.toLocaleString()} ₺`
+              )}
+            </span>
           </div>
+          {!priceForAllDays && unavailableDate && (
+            <div className="text-red-600 text-sm mt-2 font-medium">
+              {unavailableDate} tarihi veya seçili tarihlerde oda bulunmamaktadır.
+            </div>
+          )}
         </div>
-        
-        <Button 
-          type="submit" 
-          className="w-full" 
-          disabled={reservation.isPending}>
+
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={reservation.isPending || roomSoldOut}
+        >
           {reservation.isPending ? (
-            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> İşleniyor...</>
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> İşleniyor...
+            </>
           ) : (
-            <><Check className="mr-2 h-4 w-4" /> Rezervasyonu Tamamla</>
+            <>
+              <Check className="mr-2 h-4 w-4" /> Rezervasyonu Tamamla
+            </>
           )}
         </Button>
       </form>
