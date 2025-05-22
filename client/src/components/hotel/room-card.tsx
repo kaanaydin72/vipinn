@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { useDeviceType } from "@/hooks/use-mobile";
-import { Wifi, Bed, Coffee, Bath, Check, Snowflake, Tv, Moon, Building2 } from "lucide-react";
+import { Wifi, Bed, Coffee, Bath, Check, Snowflake, Tv, Moon, Building2, AlertCircle, CalendarX } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { eachDayOfInterval, format } from "date-fns";
 
@@ -39,8 +39,9 @@ export default function RoomCard({
   const deviceType = useDeviceType();
   const isMobile = deviceType === "mobile";
 
-  let dailyPricesArray: any[] = [];
-  let weekdayPricesArray: any[] = [];
+  // Günlük fiyat ve kontenjan arrayleri
+  let dailyPricesArray: { date: string; price: number; count: number }[] = [];
+  let weekdayPricesArray: { dayIndex: number; price: number; count: number }[] = [];
 
   try {
     if (room.dailyPrices) {
@@ -54,46 +55,68 @@ export default function RoomCard({
     weekdayPricesArray = [];
   }
 
-  // Giriş ve çıkış tarihi aralığını ve gece sayısını ana sayfadan al
+  // Rezervasyon aralığı/gece sayısı
   const dateRange = bookingInfo?.dateRange;
-  const nightCount = bookingInfo?.nightCount || 1;
+  // Gece sayısı: çıkış - giriş (aynı gün ise 0)
+  let nightCount = 1;
+  if (dateRange?.from && dateRange?.to) {
+    nightCount = Math.round(
+      (dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)
+    );
+  } else if (bookingInfo?.nightCount) {
+    nightCount = bookingInfo.nightCount;
+  }
 
-  // Takvimde seçilen tüm günler için fiyat olup olmadığını kontrol et
+  // Fiyat ve günlük kontenjanı bul
   let priceForAllDays = true;
   let totalPrice = 0;
+  let minAvailableCount = Infinity;
+  let soldOutDay = false;
 
-  if (dateRange?.from && dateRange?.to) {
+  if (dateRange?.from && dateRange?.to && nightCount > 0) {
     const days = eachDayOfInterval({ start: dateRange.from, end: dateRange.to });
-    // Gece sayısı kadar (giriş-çıkış arası, çıkış hariç) iterate et
     for (let i = 0; i < days.length - 1; i++) {
       const date = days[i];
       const dateStr = format(date, "yyyy-MM-dd");
       const found = dailyPricesArray.find((p) => p.date === dateStr);
       if (found) {
         totalPrice += found.price;
+        minAvailableCount = Math.min(minAvailableCount, found.count ?? 0);
+        if ((found.count ?? 0) <= 0) soldOutDay = true;
       } else {
-        // Eğer o günün fiyatı yoksa haftalık fiyatı bul
         const dayOfWeek = date.getDay();
-        const weekly = weekdayPricesArray.find((p) => p.day === dayOfWeek);
+        const weekly = weekdayPricesArray.find((p) => p.dayIndex === dayOfWeek);
         if (weekly) {
           totalPrice += weekly.price;
+          minAvailableCount = Math.min(minAvailableCount, weekly.count ?? 0);
+          if ((weekly.count ?? 0) <= 0) soldOutDay = true;
         } else {
           priceForAllDays = false;
           break;
         }
       }
     }
-  } else {
-    // Eğer tarih seçili değilse eski hesaplama
+    if (minAvailableCount === Infinity) minAvailableCount = 0;
+  } else if (nightCount > 0) {
     if (dailyPricesArray.length > 0) {
       totalPrice = dailyPricesArray[dailyPricesArray.length - 1].price * nightCount;
+      minAvailableCount = dailyPricesArray[dailyPricesArray.length - 1].count ?? 0;
+      soldOutDay = (minAvailableCount <= 0);
     } else if (weekdayPricesArray.length > 0) {
       const today = new Date().getDay();
-      const weekdayPrice = weekdayPricesArray.find((wp) => wp.day === today)?.price || 0;
-      totalPrice = weekdayPrice * nightCount;
+      const weekdayPriceObj = weekdayPricesArray.find((wp) => wp.dayIndex === today);
+      totalPrice = (weekdayPriceObj?.price ?? 0) * nightCount;
+      minAvailableCount = weekdayPriceObj?.count ?? 0;
+      soldOutDay = (minAvailableCount <= 0);
     } else {
       priceForAllDays = false;
+      minAvailableCount = 0;
     }
+  } else {
+    // Eğer nightCount 0 ise (yani aynı gün seçili)
+    priceForAllDays = false;
+    minAvailableCount = 0;
+    totalPrice = 0;
   }
 
   const displayOldPrice = priceForAllDays ? Math.round(totalPrice * 1.15) : 0;
@@ -129,16 +152,14 @@ export default function RoomCard({
     }
   };
 
-  // Oda tükendi gösterimi:
-  const roomSoldOut = room.roomCount === 0 || !priceForAllDays;
+  // Oda tükendi veya gece sayısı sıfırsa
+  const roomSoldOut = soldOutDay || !priceForAllDays || minAvailableCount === 0 || nightCount < 1;
 
   return (
     <Card
       className={`overflow-hidden border border-[#2094f3]/20 shadow-md ${
         selected ? "ring-2 ring-[#2094f3]" : ""
-      } ${
-        isMobile ? "rounded-xl" : "rounded-lg hover:shadow-lg"
-      } transition duration-300`}
+      } ${isMobile ? "rounded-xl" : "rounded-lg hover:shadow-lg"} transition duration-300`}
     >
       <div className="flex flex-row">
         {/* Sol taraf - Görsel */}
@@ -180,7 +201,7 @@ export default function RoomCard({
           </div>
 
           <div>
-            {/* Fiyat kısmı */}
+            {/* Fiyat ve kontenjan kısmı */}
             <div className="flex justify-end mt-2 mb-1">
               <div className="flex flex-col items-end">
                 {!roomSoldOut ? (
@@ -199,13 +220,13 @@ export default function RoomCard({
                         {nightCount > 1 && " (Toplam)"}
                       </span>
                     </div>
-                    <div className="text-xs text-neutral-600 font-medium mb-2">
-                      {room.roomCount > 0 && room.roomCount <= 5 ? (
+                    <div className="text-xs text-neutral-600 font-medium mb-1">
+                      {minAvailableCount > 0 && minAvailableCount <= 5 ? (
                         <span className="text-red-500 font-semibold animate-pulse">
-                          Son {room.roomCount} oda!
+                          Son {minAvailableCount} oda!
                         </span>
                       ) : (
-                        <>Oda Kontenjanı: <span className="font-bold">{room.roomCount}</span> adet</>
+                        <>Seçilen günlerde kontenjan: <span className="font-bold">{minAvailableCount}</span> oda</>
                       )}
                     </div>
                     <div className="text-xs text-neutral-500 flex items-center mt-1">
@@ -219,9 +240,15 @@ export default function RoomCard({
                     </div>
                   </>
                 ) : (
-                  <div className="flex items-center">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-red-500" />
                     <span className="bg-red-100 text-red-800 text-xs font-bold px-2 py-1 rounded">
-                      Oda tükendi
+                      {nightCount < 1
+                        ? <>
+                          <CalendarX className="inline h-4 w-4 mr-1" />
+                          Lütfen giriş/çıkış tarihini farklı günler seçin
+                        </>
+                        : "Oda tükendi veya seçilen günlerde müsait değil"}
                     </span>
                   </div>
                 )}
@@ -254,7 +281,9 @@ export default function RoomCard({
                   className="bg-neutral-300 cursor-not-allowed text-neutral-400 shadow-md"
                   disabled
                 >
-                  Oda Tükendi
+                  {nightCount < 1
+                    ? "Tarih Seçimi Hatalı"
+                    : "Oda Tükendi"}
                 </Button>
               ) : showBookButton ? (
                 <Button
@@ -266,6 +295,7 @@ export default function RoomCard({
                       ? "text-xs py-1 px-2"
                       : "text-sm py-1.5 px-4"
                   } bg-[#2094f3] hover:bg-[#1a75c0] shadow-md`}
+                  disabled={nightCount < 1}
                 >
                   {isMobile ? "Rezerve Et" : "Rezervasyon Yap"}
                 </Button>
@@ -279,6 +309,7 @@ export default function RoomCard({
                       ? "text-xs py-1 px-2"
                       : "text-sm py-1.5 px-4"
                   } bg-[#2094f3] hover:bg-[#1a75c0] shadow-md`}
+                  disabled={nightCount < 1}
                 >
                   {selected ? "Seçildi" : "Seç"}
                 </Button>

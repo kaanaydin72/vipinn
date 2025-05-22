@@ -1,5 +1,3 @@
-// RoomEditMobile.tsx
-
 import { useState, useEffect, useRef, ChangeEvent } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -11,9 +9,6 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Link, useParams } from "wouter";
 import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
-} from "@/components/ui/sheet";
-import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -21,15 +16,11 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Check, Image, UploadCloud, X, Loader2, Calendar as CalendarIcon, ArrowLeft } from "lucide-react";
+import { Check, UploadCloud, X, Loader2, ArrowLeft } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { format, addDays, isSameDay } from "date-fns";
+import { format, addDays, startOfMonth, endOfMonth, isSameDay, isWithinInterval, isAfter, isBefore } from "date-fns";
 import { tr } from "date-fns/locale";
 
-const Calendar = (props: any) => <CalendarComponent {...props} />;
-
-// FİYAT & ROOM SABİTLERİ: Mantık ve değerler ID olarak tutulacak.
 const roomTypes = [
   { id: "standart", label: "Standart Oda" },
   { id: "deluxe", label: "Deluxe Oda" },
@@ -50,31 +41,20 @@ const availableFeatures = [
   { id: "masa", label: "Çalışma Masası" },
 ];
 
-// Haftanın günü 0: Pazar ... 6: Cumartesi
-const weekDayNames = [
-  "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"
-];
-
-// Veri şeması (ID ve tiplerle uyumlu!)
 const roomFormSchema = insertRoomSchema.extend({
   hotelId: z.coerce.number(),
   features: z.array(z.string()),
   dailyPrices: z.any().optional(),
-  weekdayPrices: z.any().optional(),
   images: z.any().optional(),
 });
 type RoomFormValues = z.infer<typeof roomFormSchema>;
-
-// Fiyat veri tipleri
-type DailyPrice = { date: string; price: number };
-type WeekdayPrice = { dayIndex: number; price: number };
+type DailyPrice = { date: string; price: number; count: number };
 
 export default function RoomEditMobile() {
   const { toast } = useToast();
   const params = useParams();
   const roomId = Number(params.id);
 
-  // Otel ve oda verilerini çek
   const { data: hotels = [] } = useQuery<Hotel[]>({
     queryKey: ['/api/hotels'],
     staleTime: 10 * 60 * 1000,
@@ -88,7 +68,6 @@ export default function RoomEditMobile() {
     enabled: !!roomId && !isNaN(roomId),
   });
 
-  // Form setup
   const form = useForm<RoomFormValues>({
     resolver: zodResolver(roomFormSchema),
     mode: "onChange",
@@ -101,7 +80,6 @@ export default function RoomEditMobile() {
       features: [],
       type: "",
       dailyPrices: [],
-      weekdayPrices: [],
     }
   });
 
@@ -110,29 +88,28 @@ export default function RoomEditMobile() {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Fiyat state
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [range, setRange] = useState<{ from: Date | null, to: Date | null }>({ from: null, to: null });
-  const [selectedDays, setSelectedDays] = useState<number[]>([]);
-  const [selectedDatePrice, setSelectedDatePrice] = useState<number>(0);
+  // Fiyat/kontejan takvimi
+  const today = new Date();
+  const [currentMonth, setCurrentMonth] = useState(startOfMonth(today));
+  const firstDay = startOfMonth(currentMonth);
+  const lastDay = endOfMonth(currentMonth);
   const [dailyPrices, setDailyPrices] = useState<DailyPrice[]>([]);
-  const [weekdayPrices, setWeekdayPrices] = useState<WeekdayPrice[]>([]);
+  // Tarih aralığı state
+  const [range, setRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null });
+  const [bulkPrice, setBulkPrice] = useState<number | "">("");
+  const [bulkCount, setBulkCount] = useState<number | "">("");
 
-  // Oda detaylarını forma bas
   useEffect(() => {
     if (!roomData) return;
-    // Görseller
     let imagesList = [];
     try { imagesList = roomData.images ? JSON.parse(roomData.images) : []; } catch { imagesList = []; }
     setImages(imagesList);
-    // Günlük fiyatlar
-    let dayPrices: DailyPrice[] = [];
-    try { dayPrices = roomData.dailyPrices ? JSON.parse(roomData.dailyPrices) : []; } catch { dayPrices = []; }
-    setDailyPrices(dayPrices);
-    // Haftalık fiyatlar
-    let weekPrices: WeekdayPrice[] = [];
-    try { weekPrices = roomData.weekdayPrices ? JSON.parse(roomData.weekdayPrices) : []; } catch { weekPrices = []; }
-    setWeekdayPrices(weekPrices);
+
+    let daily: DailyPrice[] = [];
+    try {
+      daily = roomData.dailyPrices ? JSON.parse(roomData.dailyPrices) : [];
+    } catch {}
+    setDailyPrices(daily);
 
     form.reset({
       ...roomData,
@@ -143,13 +120,11 @@ export default function RoomEditMobile() {
       capacity: roomData.capacity,
       features: roomData.features || [],
       imageUrl: roomData.imageUrl,
-      dailyPrices: dayPrices,
-      weekdayPrices: weekPrices,
     });
     // eslint-disable-next-line
   }, [roomData]);
 
-  // Görsel işlemleri
+  // Resim işlemleri
   const handleFileSelect = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -192,93 +167,69 @@ export default function RoomEditMobile() {
     setImages(updated);
   };
 
-  // Fiyat işlemleri
-  // Takvimde gün tıklama (tek gün fiyat değiştir)
+  // Takvim gridini oluştur
+  const days: Date[] = [];
+  for (let d = firstDay; d <= lastDay; d = addDays(d, 1)) days.push(new Date(d));
+
+  // Takvim tıklama: aralık seçimi (ilk gün seçimi de görünür)
   const handleDayClick = (date: Date) => {
-    let dt = format(date, "yyyy-MM-dd");
-    let old = dailyPrices.find(p=>p.date===dt)?.price || 0;
-    let fiyat = prompt("Bu günün fiyatı (₺):", old.toString());
-    if (!fiyat) return;
-    let price = parseInt(fiyat);
-    if (isNaN(price) || price < 0) return;
-    let updated = dailyPrices.filter(p=>p.date!==dt);
-    updated.push({ date: dt, price });
-    setDailyPrices(updated);
+    if (!range.from || (range.from && range.to)) {
+      setRange({ from: date, to: null });
+    } else if (range.from && !range.to) {
+      if (isBefore(date, range.from)) {
+        setRange({ from: date, to: range.from });
+      } else if (isSameDay(date, range.from)) {
+        setRange({ from: date, to: null });
+      } else {
+        setRange({ from: range.from, to: date });
+      }
+    }
   };
 
-  // Tarih aralığına, haftanın günlerine ve fiyat ile fiyat ata
-  const addRangePrices = () => {
+  // Aralığı temizle
+  const clearRange = () => setRange({ from: null, to: null });
+
+  // Fiyat/kontejan ata
+  const assignBulk = () => {
+    if (!bulkPrice && !bulkCount) return;
     if (!range.from || !range.to) {
-      toast({ title: "Tarih seç!", description: "Başlangıç ve bitiş tarihini seçin.", variant: "destructive" });
+      toast({ title: "Tarih aralığı seçin" });
       return;
     }
-    if (selectedDays.length === 0) {
-      toast({ title: "Gün seç!", description: "En az bir gün seçmelisin.", variant: "destructive" });
-      return;
-    }
-    if (!selectedDatePrice || selectedDatePrice <= 0) {
-      toast({ title: "Fiyat gir!", description: "Fiyat girin.", variant: "destructive" });
-      return;
-    }
-    const days: Date[] = [];
-    for (let d = new Date(range.from); d <= range.to; d = addDays(d, 1)) {
-      let weekIndex = d.getDay() === 0 ? 6 : d.getDay()-1;
-      if (selectedDays.includes(weekIndex)) days.push(new Date(d));
-    }
-    // Günleri ekle/güncelle
     let updated = [...dailyPrices];
-    days.forEach((day) => {
-      const dateStr = format(day, "yyyy-MM-dd");
-      const idx = updated.findIndex(p => p.date === dateStr);
-      if (idx > -1) updated[idx] = { date: dateStr, price: selectedDatePrice };
-      else updated.push({ date: dateStr, price: selectedDatePrice });
-    });
+    let start = isBefore(range.from, range.to) ? range.from : range.to;
+    let end = isAfter(range.from, range.to) ? range.from : range.to;
+    for (let d = start; d <= end; d = addDays(d, 1)) {
+      const dateStr = format(d, "yyyy-MM-dd");
+      const idx = updated.findIndex(dd => dd.date === dateStr);
+      if (idx > -1) updated[idx] = {
+        date: dateStr,
+        price: bulkPrice === "" ? updated[idx].price : bulkPrice,
+        count: bulkCount === "" ? updated[idx].count : bulkCount,
+      };
+      else updated.push({ date: dateStr, price: bulkPrice || 0, count: bulkCount || 0 });
+    }
     setDailyPrices(updated);
+    setBulkPrice("");
+    setBulkCount("");
     setRange({ from: null, to: null });
-    setSelectedDatePrice(0);
-    setSelectedDays([]);
-    setIsCalendarOpen(false);
   };
 
-  // Haftalık fiyat ekleme/çıkarma (ID ile)
-  const handleWeekdayPrice = (dayIndex: number, price: number) => {
-    if (isNaN(price) || price <= 0) return;
-    let updated = [...weekdayPrices];
-    const idx = updated.findIndex(w => w.dayIndex === dayIndex);
-    if (idx > -1) updated[idx] = { dayIndex, price };
-    else updated.push({ dayIndex, price });
-    setWeekdayPrices(updated);
-    toast({ title: "Haftalık fiyat güncellendi" });
+  // Ay değiştir
+  const changeMonth = (diff: number) => {
+    setCurrentMonth((prev) => {
+      const d = new Date(prev);
+      d.setMonth(d.getMonth() + diff);
+      return startOfMonth(d);
+    });
+    setRange({ from: null, to: null });
   };
-  const removeWeekdayPrice = (dayIndex: number) => {
-    setWeekdayPrices(weekdayPrices.filter(w => w.dayIndex !== dayIndex));
-  };
-
-  // Haftanın günü kutuları
-  const toggleDay = (dayIndex: number) => {
-    setSelectedDays((prev) =>
-      prev.includes(dayIndex)
-        ? prev.filter((d) => d !== dayIndex)
-        : [...prev, dayIndex]
-    );
-  };
-  const selectAllDays = () => setSelectedDays([0,1,2,3,4,5,6]);
-  const unSelectAllDays = () => setSelectedDays([]);
-
-  // Takvimde günün üstünde fiyatı göster
-  const renderDayContent = (day: Date) => {
-    const price = dailyPrices.find((p) => isSameDay(new Date(p.date), day))?.price;
-    return (
-      <div className="flex flex-col items-center cursor-pointer">
-        <span className="font-semibold">{day.getDate()}</span>
-        {typeof price === "number" && !isNaN(price) &&
-          <span className="text-[11px] font-bold text-white px-2 mt-1 rounded-full bg-[#2094f3]">{price}₺</span>
-        }
-      </div>
-    );
+  const goTodayMonth = () => {
+    setCurrentMonth(startOfMonth(today));
+    setRange({ from: null, to: null });
   };
 
-  // Kaydet
+  // Form submit
   const updateRoomMutation = useMutation({
     mutationFn: async (data: RoomFormValues) => {
       const imagesData = images.map(img => ({
@@ -288,9 +239,8 @@ export default function RoomEditMobile() {
       }));
       let updatedData = {
         ...data,
+        images: JSON.stringify(imagesData),
         dailyPrices: JSON.stringify(dailyPrices),
-        weekdayPrices: JSON.stringify(weekdayPrices),
-        images: JSON.stringify(imagesData)
       };
       const res = await apiRequest("PUT", `/api/rooms/${roomId}`, updatedData);
       return await res.json();
@@ -332,132 +282,245 @@ export default function RoomEditMobile() {
           </div>
         </div>
       </div>
-
-      {/* FORM */}
       <div className="p-4">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-
-            {/* ... [Aynı tasarımda, özellikler ve tüm alanlar] ... */}
-
-            {/* FİYAT TAKVİMİ ve HAFTALIK FİYAT (YENİ) */}
-            <FormItem>
-              <FormLabel>Fiyat Takvimi</FormLabel>
-              <div className="space-y-2">
-                <Sheet open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                  <SheetTrigger asChild>
-                    <Button type="button" variant="outline" className="h-12 bg-white border-[#2094f3] w-full text-[#2094f3] flex items-center justify-center">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      <span>Tarih Aralığı ve Günlere Fiyat Ekle</span>
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="right" className="w-full sm:max-w-md">
-                    <SheetHeader className="text-left">
-                      <SheetTitle>Aralık + Gün + Fiyat</SheetTitle>
-                    </SheetHeader>
-                    {/* Tarih aralığı seç */}
-                    <div className="mt-4 mb-2">
-                      <Calendar
-                        mode="range"
-                        locale={tr}
-                        selected={range}
-                        onSelect={setRange}
-                        numberOfMonths={1}
-                        className="mx-auto"
-                        disabled={(date) => false}
-                      />
-                      <div className="text-sm mt-2 font-medium">
-                        {range.from ? format(range.from, "dd MMM yyyy") : "Başlangıç"} - {range.to ? format(range.to, "dd MMM yyyy") : "Bitiş"}
-                      </div>
-                    </div>
-                    {/* Haftanın günleri */}
-                    <div className="grid grid-cols-2 gap-2 mt-4 mb-4">
-                      {weekDayNames.map((day, idx) => (
-                        <label key={idx} className={`flex items-center px-3 py-2 border rounded-xl cursor-pointer transition-all
-                          ${selectedDays.includes(idx)
-                            ? 'bg-[#2094f3] text-white border-[#2094f3]'
-                            : 'bg-white text-neutral-800 border-[#2094f3]/30'}`}>
-                          <input
-                            type="checkbox"
-                            checked={selectedDays.includes(idx)}
-                            onChange={() => toggleDay(idx)}
-                            className="accent-[#2094f3] mr-2"
-                          />
-                          {day}
-                        </label>
+            {/* OTEL - ODA BİLGİLERİ - TİP - ÖZELLİKLER - RESİMLER */}
+            <FormField
+              control={form.control}
+              name="hotelId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Otel</FormLabel>
+                  <Select onValueChange={value => field.onChange(Number(value))} value={field.value?.toString()}>
+                    <FormControl>
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Otel seçin" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {hotels.map((hotel) => (
+                        <SelectItem key={hotel.id} value={hotel.id.toString()}>
+                          {hotel.name}
+                        </SelectItem>
                       ))}
-                    </div>
-                    <div className="flex gap-2 mb-2">
-                      <Button type="button" size="sm" variant="outline"
-                        className="border-[#2094f3] text-[#2094f3]"
-                        onClick={selectAllDays}>Hepsini Seç</Button>
-                      <Button type="button" size="sm" variant="ghost"
-                        onClick={unSelectAllDays}>Temizle</Button>
-                    </div>
-                    {/* Fiyat alanı */}
-                    <div className="mb-4">
-                      <FormLabel>Fiyat (₺)</FormLabel>
-                      <Input
-                        type="number"
-                        value={selectedDatePrice}
-                        onChange={e => setSelectedDatePrice(Number(e.target.value))}
-                        min={0}
-                        placeholder="Fiyat"
-                        className="h-12 mt-1"
-                      />
-                    </div>
-                    <Button type="button" className="w-full bg-[#2094f3] text-white font-semibold"
-                      onClick={addRangePrices}
-                      disabled={selectedDays.length === 0 || selectedDatePrice <= 0 || !range.from || !range.to}>
-                      Onayla ve Ata
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Oda Adı</FormLabel>
+                  <FormControl>
+                    <Input {...field} className="h-12" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Açıklama</FormLabel>
+                  <FormControl>
+                    <Textarea className="resize-none h-24" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="capacity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Kapasite</FormLabel>
+                  <FormControl>
+                    <Input type="number" min="1" {...field} onChange={e => field.onChange(parseInt(e.target.value))} className="h-12" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Oda Tipi</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Oda tipi seçin" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {roomTypes.map((type) => (
+                        <SelectItem key={type.id} value={type.id}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="features"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Oda Özellikleri</FormLabel>
+                  <div className="flex flex-wrap gap-2">
+                    {availableFeatures.map((feature) => (
+                      <label key={feature.id} className="flex items-center gap-2 px-3 py-2 border rounded-xl cursor-pointer">
+                        <Checkbox
+                          checked={field.value?.includes(feature.id)}
+                          onCheckedChange={() => {
+                            if (field.value?.includes(feature.id)) {
+                              field.onChange(field.value.filter((f: string) => f !== feature.id));
+                            } else {
+                              field.onChange([...(field.value || []), feature.id]);
+                            }
+                          }}
+                        />
+                        {feature.label}
+                      </label>
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {/* GÖRSELLER */}
+            <FormItem>
+              <FormLabel>Oda Resimleri</FormLabel>
+              <div className="flex flex-wrap gap-3">
+                {images.map((img, i) => (
+                  <div key={i} className="relative">
+                    <img src={img.url} className={`w-20 h-20 object-cover rounded-lg border-2 ${img.isMain ? 'border-[#2094f3]' : 'border-gray-200'}`} />
+                    {img.isMain && <span className="absolute top-0 left-0 text-xs bg-[#2094f3] text-white rounded-bl-lg rounded-tr-lg px-2">Ana</span>}
+                    <Button type="button" size="icon" variant="ghost" className="absolute top-1 right-1 bg-white" onClick={() => removeImage(i)}>
+                      <X className="h-4 w-4 text-red-600" />
                     </Button>
-                  </SheetContent>
-                </Sheet>
-                {/* TAKVİM */}
-                <div className="bg-white rounded-lg border border-[#2094f3]/20 shadow-sm p-3 mt-3">
-                  <Calendar
-                    mode="single"
-                    locale={tr}
-                    numberOfMonths={1}
-                    className="mx-auto"
-                    disabled={() => false}
-                    renderDay={renderDayContent}
-                    onDayClick={handleDayClick}
+                    {!img.isMain && (
+                      <Button type="button" size="icon" variant="outline" className="absolute bottom-1 left-1 bg-white" onClick={() => setMainImage(i)}>
+                        Ana
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <div>
+                  <Button type="button" size="icon" variant="outline" className="w-20 h-20" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                    {isUploading ? <Loader2 className="animate-spin" /> : <UploadCloud />}
+                  </Button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    accept="image/*"
+                    multiple
                   />
-                  <div className="text-xs text-neutral-500 mt-1">
-                    Takvimde güne dokunarak o günün fiyatını tekil değiştirebilirsin.
-                  </div>
-                </div>
-                {/* Haftalık fiyat alanı */}
-                <div className="mt-3 p-3 border border-[#2094f3]/20 rounded bg-neutral-50">
-                  <div className="text-sm font-medium mb-2">Haftalık Fiyatlar:</div>
-                  {weekDayNames.map((name, idx) => (
-                    <div key={idx} className="flex items-center gap-2 mb-1">
-                      <span className="w-24">{name}</span>
-                      <Input
-                        type="number"
-                        placeholder="₺"
-                        min={0}
-                        value={weekdayPrices.find(w => w.dayIndex === idx)?.price || ""}
-                        onChange={e => handleWeekdayPrice(idx, Number(e.target.value))}
-                        className="h-8 w-28"
-                      />
-                      {weekdayPrices.find(w => w.dayIndex === idx) &&
-                        <Button type="button" size="icon" variant="ghost" onClick={() => removeWeekdayPrice(idx)}>
-                          <X className="h-3 w-3 text-red-500" />
-                        </Button>
-                      }
-                    </div>
-                  ))}
-                  <div className="text-xs text-neutral-400 mt-1">
-                    Haftanın gününe özel fiyat ekleyin, özel günlerde dailyPrices, diğerlerinde weekdayPrices kullanılır.
-                  </div>
                 </div>
               </div>
             </FormItem>
-
-            {/* ... [Diğer alanlar aynen] ... */}
-
+            {/* FİYAT & KONTEJAN TAKVİMİ */}
+            <FormItem>
+              <FormLabel>Fiyat & Kontejan Takvimi</FormLabel>
+              {/* Takvim kontrolleri */}
+              <div className="rounded-xl border border-[#2094f3]/40 bg-white shadow-sm p-2 mb-2 overflow-x-auto">
+                <div className="flex items-center gap-2 mb-2">
+                  <Button type="button" variant="ghost" size="icon" onClick={() => changeMonth(-1)}>
+                    {"<"}
+                  </Button>
+                  <span className="font-bold text-[#2094f3]">{format(currentMonth, "MMMM yyyy", { locale: tr })}</span>
+                  <Button type="button" variant="ghost" size="icon" onClick={() => changeMonth(1)}>
+                    {">"}
+                  </Button>
+                  <Button type="button" variant="ghost" size="icon" onClick={goTodayMonth}>
+                    Bugün
+                  </Button>
+                </div>
+                {/* TAKVİM GRIDİ */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr>
+                        {["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"].map(d => <th key={d} className="p-1 text-center">{d}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Array.from({ length: Math.ceil((days.length + firstDay.getDay() - 1) / 7) }).map((_, rowIdx) => (
+                        <tr key={rowIdx}>
+                          {Array.from({ length: 7 }).map((_, colIdx) => {
+                            const cellIdx = rowIdx * 7 + colIdx - (firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1);
+                            if (cellIdx < 0 || cellIdx >= days.length) return <td key={colIdx}></td>;
+                            const day = days[cellIdx];
+                            const selected =
+                              (range.from && !range.to && isSameDay(day, range.from)) ||
+                              (range.from && range.to && isWithinInterval(day, {
+                                start: isBefore(range.from, range.to) ? range.from : range.to,
+                                end: isAfter(range.from, range.to) ? range.from : range.to,
+                              }));
+                            const dateStr = format(day, "yyyy-MM-dd");
+                            const value = dailyPrices.find(x => x.date === dateStr) || {};
+                            return (
+                              <td key={colIdx}
+                                className={`p-1 text-center cursor-pointer ${selected ? "bg-[#2094f3]/30 rounded-lg" : ""}`}
+                                onClick={() => handleDayClick(day)}>
+                                <div className="flex flex-col items-center">
+                                  <span className="font-semibold">{day.getDate()}</span>
+                                  <span className="text-[10px] leading-none mt-0.5 text-[#2094f3]">{value.price ? value.price + "₺" : ""}</span>
+                                  <span className="text-[9px] text-[#ff9800]">{value.count > 0 ? "K:" + value.count : ""}</span>
+                                </div>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {/* Aralık info */}
+                <div className="mt-3 flex flex-wrap gap-1 text-xs">
+                  {range.from && range.to
+                    ? <span className="px-2 py-0.5 rounded bg-[#2094f3]/10 text-[#2094f3]">
+                        {format(isBefore(range.from, range.to) ? range.from : range.to, "dd.MM.yyyy")}
+                        {" - "}
+                        {format(isAfter(range.from, range.to) ? range.from : range.to, "dd.MM.yyyy")}
+                      </span>
+                    : range.from
+                      ? <span className="px-2 py-0.5 rounded bg-[#2094f3]/10 text-[#2094f3]">
+                          {format(range.from, "dd.MM.yyyy")}
+                        </span>
+                      : <span className="text-gray-400">Tarih aralığı seçin...</span>
+                  }
+                  {(range.from || range.to) &&
+                    <Button size="sm" variant="ghost" onClick={clearRange} className="ml-2 text-red-500">Temizle</Button>
+                  }
+                </div>
+                {/* Fiyat/kontejan giriş ve onayla */}
+                <div className="flex gap-2 mt-3">
+                  <Input type="number" placeholder="Fiyat (₺)" min={0} className="w-28" value={bulkPrice}
+                    onChange={e => setBulkPrice(e.target.value === "" ? "" : Number(e.target.value))} />
+                  <Input type="number" placeholder="Kontejan" min={0} className="w-24" value={bulkCount}
+                    onChange={e => setBulkCount(e.target.value === "" ? "" : Number(e.target.value))} />
+                  <Button type="button" onClick={assignBulk} className="bg-[#2094f3] text-white px-3">Onayla</Button>
+                </div>
+                <div className="text-xs text-neutral-500 mt-2 px-1">
+                  Takvimde aralık seçin, aşağıdan fiyat/kontejan yazıp "Onayla" ile ata. Değişiklik için üstteki "Odayı Kaydet" ile veriler kaydolur.
+                </div>
+              </div>
+            </FormItem>
             <Button
               type="submit"
               className="w-full h-12 bg-[#2094f3] text-white mt-6 font-bold"
