@@ -225,6 +225,7 @@ export default function ReservationPage() {
       }
       setIsSuccess(true);
       queryClient.invalidateQueries({ queryKey: ["/api/reservations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
       setTimeout(() => setLocation("/reservations"), 1600);
     },
     onError: (e: any) => {

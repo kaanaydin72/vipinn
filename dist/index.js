@@ -609,8 +609,20 @@ var DatabaseStorage = class {
 };
 
 // server/storage.ts
+import { eq as eq2 } from "drizzle-orm";
 var MemoryStore = createMemoryStore(session2);
 var storage = new DatabaseStorage();
+storage.updateRoomDailyPrices = updateRoomDailyPrices;
+async function updateRoomDailyPrices(roomId, dailyPrices) {
+  console.log("updateRoomDailyPrices \xC7A\u011ERILDI:", { roomId, dailyPrices });
+  try {
+    await db.update(rooms).set({ dailyPrices }).where(eq2(rooms.id, roomId));
+    console.log("VER\u0130TABANINA YAZILDI.");
+  } catch (error) {
+    console.error("updateRoomDailyPrices HATASI:", error);
+  }
+}
+storage.updateRoomDailyPrices = updateRoomDailyPrices;
 
 // server/auth.ts
 import passport from "passport";
@@ -1551,7 +1563,8 @@ async function registerRoutes(app2) {
               const dateOnly = dateStr.substring(0, 10);
               return {
                 date: dateOnly,
-                price: price.price
+                price: price.price,
+                count: price.count ?? 0
               };
             });
             console.log("Normalize edilmi\u015F fiyatlar:", JSON.stringify(normalizedDailyPrices).substring(0, 100) + "...");
@@ -1705,6 +1718,10 @@ async function registerRoutes(app2) {
       try {
         const validatedData = insertReservationSchema.parse(reservationData);
         console.log("Validated data:", validatedData);
+        if (reservationData.dailyPrices) {
+          validatedData.dailyPrices = reservationData.dailyPrices;
+          console.log("validatedData.dailyPrices y\xFCklendi:", validatedData.dailyPrices);
+        }
         const room = await storage.getRoom(validatedData.roomId);
         if (!room) {
           return res.status(400).json({ message: "Room not found" });
@@ -1717,6 +1734,19 @@ async function registerRoutes(app2) {
         if (!oda || oda.roomCount <= 0) {
           return res.status(400).json({ message: "Bu oda i\xE7in m\xFCsaitlik yok!" });
         }
+        const parsedDailyPrices = JSON.parse(validatedData.dailyPrices || "[]");
+        const selectedDates = [];
+        for (let d = new Date(validatedData.checkIn); d < new Date(validatedData.checkOut); d.setDate(d.getDate() + 1)) {
+          selectedDates.push(new Date(d).toISOString().slice(0, 10));
+        }
+        const updatedDailyPrices = parsedDailyPrices.map((p) => {
+          if (selectedDates.includes(p.date.slice(0, 10))) {
+            return { ...p, count: Math.max((p.count ?? 0) - 1, 0) };
+          }
+          return p;
+        });
+        console.log("G\xDCNCELLENEN dailyPrices JSON:", JSON.stringify(updatedDailyPrices, null, 2));
+        await storage.updateRoomDailyPrices(validatedData.roomId, JSON.stringify(updatedDailyPrices));
         const reservation = await storage.createReservation(validatedData);
         await storage.decrementRoomCount(validatedData.roomId);
         if (validatedData.paymentMethod === "credit_card") {

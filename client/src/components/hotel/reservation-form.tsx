@@ -128,9 +128,20 @@ export default function ReservationForm({ hotelId, room, onSuccess }: Reservatio
   }, [watchCheckIn, watchCheckOut, dailyPricesArray, weekdayPricesArray]);
 
   // Rezervasyon kaydı
+  
   const reservation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
       if (!user) throw new Error("Rezervasyon yapmak için giriş yapmalısınız");
+
+      let dailyPricesArray: any[] = [];
+      if (room.dailyPrices) {
+        try {
+          dailyPricesArray = JSON.parse(room.dailyPrices);
+        } catch (e) {
+          console.error("dailyPrices parse hatası:", e);
+        }
+      }
+
       const reservationData = {
         userId: user.id,
         roomId: room.id,
@@ -140,10 +151,13 @@ export default function ReservationForm({ hotelId, room, onSuccess }: Reservatio
         guests: values.guests,
         totalPrice,
         status: "pending",
+        dailyPrices: JSON.stringify(dailyPricesArray),
       };
+
       const res = await apiRequest("POST", "/api/reservations", reservationData);
       return await res.json();
     },
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reservations"] });
       toast({

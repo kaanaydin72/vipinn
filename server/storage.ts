@@ -1,14 +1,19 @@
-import { 
-  users, type User, type InsertUser, 
-  hotels, type Hotel, type InsertHotel, 
-  rooms, type Room, type InsertRoom, 
-  reservations, type Reservation, type InsertReservation, 
-  themes, type Theme, type InsertTheme, 
-  hotelPolicies, type HotelPolicy, type InsertHotelPolicy, 
+import {
+  users, type User, type InsertUser,
+  hotels, type Hotel, type InsertHotel,
+  rooms, type Room, type InsertRoom,
+  reservations, type Reservation, type InsertReservation,
+  themes, type Theme, type InsertTheme,
+  hotelPolicies, type HotelPolicy, type InsertHotelPolicy,
   pageContents, type PageContent, type InsertPageContent,
   paytrSettings, type PaytrSettings, type InsertPaytrSettings,
   paytrTransactions, type PaytrTransaction, type InsertPaytrTransaction
 } from "@shared/schema";
+
+import { db } from "./db"; // ✅ veritabanı bağlantısı
+import { rooms as roomsTable } from "@shared/schema"; // ✅ rooms tablosu referansı
+import { eq } from "drizzle-orm"; // ✅ where şartı için
+
 import createMemoryStore from "memorystore";
 import session from "express-session";
 import { Store } from "express-session";
@@ -25,14 +30,14 @@ export interface IStorage {
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
   getUsers(): Promise<User[]>;
-  
+
   // Hotel operations
   getHotel(id: number): Promise<Hotel | undefined>;
   getHotels(): Promise<Hotel[]>;
   createHotel(hotel: InsertHotel): Promise<Hotel>;
   updateHotel(id: number, hotel: Partial<InsertHotel>): Promise<Hotel | undefined>;
   deleteHotel(id: number): Promise<boolean>;
-  
+
   // Room operations
   getRoom(id: number): Promise<Room | undefined>;
   getRoomsByHotel(hotelId: number): Promise<Room[]>;
@@ -40,7 +45,7 @@ export interface IStorage {
   createRoom(room: InsertRoom): Promise<Room>;
   updateRoom(id: number, room: Partial<InsertRoom>): Promise<Room | undefined>;
   deleteRoom(id: number): Promise<boolean>;
-  
+
   // Reservation operations
   getReservation(id: number): Promise<Reservation | undefined>;
   getReservations(): Promise<Reservation[]>; // Tüm rezervasyonları getirme metodunu ekledik
@@ -49,11 +54,11 @@ export interface IStorage {
   createReservation(reservation: InsertReservation): Promise<Reservation>;
   updateReservationStatus(id: number, status: string): Promise<Reservation | undefined>;
   updateReservationPayment(id: number, paymentMethod: string, paymentStatus: string, paymentId: string | null): Promise<Reservation | undefined>;
-  
+
   // Theme operations
   getUserTheme(userId: number): Promise<Theme | undefined>;
   setUserTheme(theme: InsertTheme): Promise<Theme>;
-  
+
   // Hotel Policy operations
   getHotelPolicy(id: number): Promise<HotelPolicy | undefined>;
   getHotelPolicyByHotelId(hotelId: number): Promise<HotelPolicy | undefined>;
@@ -61,26 +66,26 @@ export interface IStorage {
   createHotelPolicy(policy: InsertHotelPolicy): Promise<HotelPolicy>;
   updateHotelPolicy(id: number, policy: Partial<InsertHotelPolicy>): Promise<HotelPolicy | undefined>;
   deleteHotelPolicy(id: number): Promise<boolean>;
-  
+
   // Page Content operations
   getPageContent(pageKey: string): Promise<PageContent | undefined>;
   getAllPageContents(): Promise<PageContent[]>;
   createPageContent(content: InsertPageContent): Promise<PageContent>;
   updatePageContent(pageKey: string, content: Partial<InsertPageContent>): Promise<PageContent | undefined>;
   deletePageContent(pageKey: string): Promise<boolean>;
-  
+
   // PayTR Settings operations
   getPaytrSettings(): Promise<PaytrSettings | undefined>;
   savePaytrSettings(settings: InsertPaytrSettings): Promise<PaytrSettings>;
   updatePaytrSettings(settings: Partial<InsertPaytrSettings>): Promise<PaytrSettings | undefined>;
-  
+
   // PayTR Transaction operations
   createPaytrTransaction(transaction: InsertPaytrTransaction): Promise<PaytrTransaction>;
   getPaytrTransaction(id: number): Promise<PaytrTransaction | undefined>;
   getPaytrTransactionByMerchantOid(merchantOid: string): Promise<PaytrTransaction | undefined>;
   updatePaytrTransactionStatus(id: number, status: string, responseData?: string): Promise<PaytrTransaction | undefined>;
   getPaytrTransactionsByReservationId(reservationId: number): Promise<PaytrTransaction[]>;
-  
+
   // Session store
   sessionStore: Store;
 }
@@ -104,7 +109,7 @@ export class MemStorage implements IStorage {
   private pageContentIdCounter: number;
   private paytrSettingsIdCounter: number;
   private paytrTransactionIdCounter: number;
-  
+
   sessionStore: Store;
 
   constructor() {
@@ -126,19 +131,19 @@ export class MemStorage implements IStorage {
     this.pageContentIdCounter = 1;
     this.paytrSettingsIdCounter = 1;
     this.paytrTransactionIdCounter = 1;
-    
+
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     });
-    
+
     // Başlangıçta rezervasyon maps'inin doğru başlatıldığını kontrol et
     console.log("MemStorage başlatıldı. Boş rezervasyon map'i oluşturuldu.");
     console.log("Temiz mod: Test rezervasyonu eklenmedi.");
-    
+
     // Initialize with sample data
     this.initializeData();
   }
-  
+
   private initializeData() {
     // Create only admin users - no sample hotels or rooms
     Promise.all([
@@ -185,7 +190,7 @@ export class MemStorage implements IStorage {
     ]).then(users => {
       console.log(`${users.length} users created`);
     });
-    
+
     // No sample hotels or rooms - admin will add these manually
     console.log("No sample hotels or rooms created - admin will add them manually with calendar-based pricing");
   }
@@ -200,7 +205,7 @@ export class MemStorage implements IStorage {
       (user) => user.username.toLowerCase() === username.toLowerCase()
     );
   }
-  
+
   async getUserByEmail(email: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
       (user) => user.email.toLowerCase() === email.toLowerCase()
@@ -213,80 +218,80 @@ export class MemStorage implements IStorage {
     this.users.set(id, user);
     return user;
   }
-  
+
   async getUsers(): Promise<User[]> {
     return Array.from(this.users.values());
   }
-  
+
   async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
     const existingUser = this.users.get(id);
     if (!existingUser) return undefined;
-    
+
     // Şifre güncellemesi yapılacaksa, hashlenmiş olarak kabul ediyoruz
     // Auth servisinde şifre hashleme işlemleri yapıldığını varsayıyoruz
     const updatedUser = { ...existingUser, ...userData };
     this.users.set(id, updatedUser);
     return updatedUser;
   }
-  
+
   async deleteUser(id: number): Promise<boolean> {
     return this.users.delete(id);
   }
-  
+
   // Hotel operations
   async getHotel(id: number): Promise<Hotel | undefined> {
     return this.hotels.get(id);
   }
-  
+
   async getHotels(): Promise<Hotel[]> {
     return Array.from(this.hotels.values());
   }
-  
+
   async createHotel(hotel: InsertHotel): Promise<Hotel> {
     const id = this.hotelIdCounter++;
     const newHotel: Hotel = { ...hotel, id };
     this.hotels.set(id, newHotel);
     return newHotel;
   }
-  
+
   async updateHotel(id: number, hotel: Partial<InsertHotel>): Promise<Hotel | undefined> {
     const existingHotel = this.hotels.get(id);
     if (!existingHotel) return undefined;
-    
+
     const updatedHotel = { ...existingHotel, ...hotel };
     this.hotels.set(id, updatedHotel);
     return updatedHotel;
   }
-  
+
   async deleteHotel(id: number): Promise<boolean> {
     // Otel var mı kontrol et
     const hotel = await this.getHotel(id);
     if (!hotel) {
       return false;
     }
-    
+
     // Otele ait tüm odaları bul
     const hotelRooms = await this.getRoomsByHotel(id);
-    
+
     // Odaları teker teker sil
     for (const room of hotelRooms) {
       await this.deleteRoom(room.id);
       console.log(`Otel silme işlemi: Oda silindi - ID: ${room.id}, Otel ID: ${id}`);
     }
-    
+
     // Otele ait politikaları sil
     const policy = await this.getHotelPolicyByHotelId(id);
     if (policy) {
       await this.deleteHotelPolicy(policy.id);
       console.log(`Otel silme işlemi: Politika silindi - ID: ${policy.id}, Otel ID: ${id}`);
     }
-    
+
     // Oteli sil
     const result = this.hotels.delete(id);
     console.log(`Otel silindi - ID: ${id}, Sonuç: ${result}`);
     return result;
   }
-  
+
   // Room operations
   async getRoom(id: number): Promise<Room | undefined> {
     const room = this.rooms.get(id);
@@ -295,21 +300,21 @@ export class MemStorage implements IStorage {
     }
     return room;
   }
-  
+
   async getRoomsByHotel(hotelId: number): Promise<Room[]> {
     return Array.from(this.rooms.values()).filter(room => room.hotelId === hotelId);
   }
-  
+
   async getAllRooms(): Promise<Room[]> {
     return Array.from(this.rooms.values());
   }
-  
+
   async createRoom(room: InsertRoom): Promise<Room> {
     const id = this.roomIdCounter++;
     // roomCount değeri yoksa, varsayılan olarak 1 ayarla
     const roomCount = room.roomCount || 1;
-    const newRoom: Room = { 
-      ...room, 
+    const newRoom: Room = {
+      ...room,
       id,
       roomCount,
       images: room.images || null,
@@ -319,79 +324,79 @@ export class MemStorage implements IStorage {
     this.rooms.set(id, newRoom);
     return newRoom;
   }
-  
+
   async updateRoom(id: number, room: Partial<InsertRoom>): Promise<Room | undefined> {
     const existingRoom = this.rooms.get(id);
     if (!existingRoom) return undefined;
-    
+
     const updatedRoom = { ...existingRoom, ...room };
     this.rooms.set(id, updatedRoom);
     return updatedRoom;
   }
-  
+
   async deleteRoom(id: number): Promise<boolean> {
     return this.rooms.delete(id);
   }
-  
+
   // Reservation operations
   async getReservation(id: number): Promise<Reservation | undefined> {
     return this.reservations.get(id);
   }
-  
+
   // Yeni metod: Tüm rezervasyonları getir
   async getReservations(): Promise<Reservation[]> {
     return Array.from(this.reservations.values());
   }
-  
+
   async getReservationsByUser(userId: number): Promise<Reservation[]> {
     return Array.from(this.reservations.values()).filter(res => res.userId === userId);
   }
-  
+
   async getReservationsByRoom(roomId: number): Promise<Reservation[]> {
     return Array.from(this.reservations.values()).filter(res => res.roomId === roomId);
   }
-  
+
   async createReservation(reservation: InsertReservation): Promise<Reservation> {
     const id = this.reservationIdCounter++;
-    const newReservation: Reservation = { 
-      ...reservation, 
-      id, 
-      createdAt: new Date(), 
+    const newReservation: Reservation = {
+      ...reservation,
+      id,
+      createdAt: new Date(),
       status: "pending",
       paymentMethod: reservation.paymentMethod || "on_site",
       paymentStatus: "pending",
       paymentId: null
     };
     this.reservations.set(id, newReservation);
-    
+
     // Oluşturulan rezervasyonu logla ve rezervasyon sayısını kontrol et
     console.log("Oluşturulan rezervasyon:", newReservation);
     console.log("Toplam rezervasyon sayısı:", this.reservations.size);
     console.log("Tüm rezervasyonlar:", Array.from(this.reservations.values()));
-    
+
     return newReservation;
   }
-  
+
   async updateReservationStatus(id: number, status: string): Promise<Reservation | undefined> {
     console.log(`Storage: Updating reservation ${id} to status: ${status}`);
-    
+
     if (isNaN(Number(id))) {
       console.error("Invalid reservation ID:", id);
       return undefined;
     }
-    
+
     const existingReservation = this.reservations.get(id);
     if (!existingReservation) {
       console.error(`Reservation with ID ${id} not found`);
       return undefined;
     }
-    
+
     // Validate status
     if (!["confirmed", "pending", "cancelled", "completed"].includes(status)) {
       console.error(`Invalid status: ${status}`);
       return undefined;
     }
-    
+
     const updatedReservation = { ...existingReservation, status };
     this.reservations.set(id, updatedReservation);
     console.log(`Reservation ${id} status updated to ${status}`);
@@ -399,57 +404,57 @@ export class MemStorage implements IStorage {
   }
 
   async updateReservationPayment(
-    id: number, 
-    paymentMethod: string, 
+    id: number,
+    paymentMethod: string,
     paymentStatus: string,
     paymentId: string | null
   ): Promise<Reservation | undefined> {
     console.log(`Storage: Updating reservation ${id} payment info`);
-    
+
     if (isNaN(Number(id))) {
       console.error("Invalid reservation ID:", id);
       return undefined;
     }
-    
+
     const existingReservation = this.reservations.get(id);
     if (!existingReservation) {
       console.error(`Reservation with ID ${id} not found`);
       return undefined;
     }
-    
+
     // Validate payment method
     if (!["on_site", "credit_card"].includes(paymentMethod)) {
       console.error(`Invalid payment method: ${paymentMethod}`);
       return undefined;
     }
-    
+
     // Validate payment status
     if (!["pending", "paid", "failed"].includes(paymentStatus)) {
       console.error(`Invalid payment status: ${paymentStatus}`);
       return undefined;
     }
-    
-    const updatedReservation = { 
-      ...existingReservation, 
-      paymentMethod, 
+
+    const updatedReservation = {
+      ...existingReservation,
+      paymentMethod,
       paymentStatus,
-      paymentId 
+      paymentId
     };
-    
+
     this.reservations.set(id, updatedReservation);
     console.log(`Reservation ${id} payment info updated: ${paymentMethod}, ${paymentStatus}`);
     return updatedReservation;
   }
-  
+
   // Theme operations
   async getUserTheme(userId: number): Promise<Theme | undefined> {
     return Array.from(this.themes.values()).find(theme => theme.userId === userId);
   }
-  
+
   async setUserTheme(themeData: InsertTheme): Promise<Theme> {
     // Check if user already has a theme
     const existingTheme = await this.getUserTheme(themeData.userId);
-    
+
     if (existingTheme) {
       // Update existing theme
       const updatedTheme = { ...existingTheme, theme: themeData.theme };
@@ -463,103 +468,103 @@ export class MemStorage implements IStorage {
       return newTheme;
     }
   }
-  
+
   // Hotel Policy operations
   async getHotelPolicy(id: number): Promise<HotelPolicy | undefined> {
     return this.hotelPolicies.get(id);
   }
-  
+
   async getHotelPolicyByHotelId(hotelId: number): Promise<HotelPolicy | undefined> {
     return Array.from(this.hotelPolicies.values()).find(policy => policy.hotelId === hotelId);
   }
-  
+
   async getAllHotelPolicies(): Promise<HotelPolicy[]> {
     return Array.from(this.hotelPolicies.values());
   }
-  
+
   async createHotelPolicy(policy: InsertHotelPolicy): Promise<HotelPolicy> {
     const id = this.hotelPolicyIdCounter++;
-    const newPolicy: HotelPolicy = { 
-      ...policy, 
+    const newPolicy: HotelPolicy = {
+      ...policy,
       id,
       createdAt: new Date(),
       updatedAt: new Date(),
       otherRules: policy.otherRules || []
     };
-    
+
     this.hotelPolicies.set(id, newPolicy);
     console.log(`Otel politikası oluşturuldu: ${policy.title} (Otel ID: ${policy.hotelId})`);
     return newPolicy;
   }
-  
+
   async updateHotelPolicy(id: number, policy: Partial<InsertHotelPolicy>): Promise<HotelPolicy | undefined> {
     const existingPolicy = this.hotelPolicies.get(id);
     if (!existingPolicy) return undefined;
-    
-    const updatedPolicy = { 
-      ...existingPolicy, 
+
+    const updatedPolicy = {
+      ...existingPolicy,
       ...policy,
       updatedAt: new Date(),
       otherRules: policy.otherRules || existingPolicy.otherRules
     };
-    
+
     this.hotelPolicies.set(id, updatedPolicy);
     console.log(`Otel politikası güncellendi: ID ${id}`);
     return updatedPolicy;
   }
-  
+
   async deleteHotelPolicy(id: number): Promise<boolean> {
     return this.hotelPolicies.delete(id);
   }
-  
+
   // Page Content operations
   async getPageContent(pageKey: string): Promise<PageContent | undefined> {
     return this.pageContents.get(pageKey);
   }
-  
+
   async getAllPageContents(): Promise<PageContent[]> {
     return Array.from(this.pageContents.values());
   }
-  
+
   async createPageContent(content: InsertPageContent): Promise<PageContent> {
     const id = this.pageContentIdCounter++;
-    const newContent: PageContent = { 
-      ...content, 
+    const newContent: PageContent = {
+      ...content,
       id,
       createdAt: new Date(),
       updatedAt: new Date()
     };
-    
+
     this.pageContents.set(content.pageKey, newContent);
     console.log(`Sayfa içeriği oluşturuldu: ${content.title} (Anahtar: ${content.pageKey})`);
     return newContent;
   }
-  
+
   async updatePageContent(pageKey: string, content: Partial<InsertPageContent>): Promise<PageContent | undefined> {
     const existingContent = this.pageContents.get(pageKey);
     if (!existingContent) return undefined;
-    
-    const updatedContent = { 
-      ...existingContent, 
+
+    const updatedContent = {
+      ...existingContent,
       ...content,
       updatedAt: new Date()
     };
-    
+
     this.pageContents.set(pageKey, updatedContent);
     console.log(`Sayfa içeriği güncellendi: ${updatedContent.title} (Anahtar: ${pageKey})`);
     return updatedContent;
   }
-  
+
   async deletePageContent(pageKey: string): Promise<boolean> {
     return this.pageContents.delete(pageKey);
   }
-  
+
   // PayTR Settings operations
   async getPaytrSettings(): Promise<PaytrSettings | undefined> {
     // Her zaman sadece tek bir ayar kaydı olacak, ID=1
     return this.paytrSettings.get(1);
   }
-  
+
   async savePaytrSettings(settings: InsertPaytrSettings): Promise<PaytrSettings> {
     const id = 1; // PayTR ayarları için sabit ID kullanıyoruz
     const newSettings: PaytrSettings = {
@@ -568,7 +573,7 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       updatedAt: new Date()
     };
-    
+
     this.paytrSettings.set(id, newSettings);
     console.log("PayTR ayarları kaydedildi:", {
       merchantId: newSettings.merchantId,
@@ -576,19 +581,19 @@ export class MemStorage implements IStorage {
       merchantSaltLength: newSettings.merchantSalt.length,
       testMode: newSettings.testMode
     });
-    
+
     return newSettings;
   }
-  
+
   async updatePaytrSettings(settings: Partial<InsertPaytrSettings>): Promise<PaytrSettings | undefined> {
     const existingSettings = await this.getPaytrSettings();
-    
+
     if (!existingSettings) {
       // Ayarlar henüz yoksa, yeni oluştur
       if (!settings.merchantId || !settings.merchantKey || !settings.merchantSalt) {
         throw new Error("PayTR ayarları tam olarak sağlanmalıdır");
       }
-      
+
       return this.savePaytrSettings({
         merchantId: settings.merchantId,
         merchantKey: settings.merchantKey,
@@ -596,14 +601,14 @@ export class MemStorage implements IStorage {
         testMode: settings.testMode || false
       });
     }
-    
+
     // Mevcut ayarları güncelle
     const updatedSettings: PaytrSettings = {
       ...existingSettings,
       ...settings,
       updatedAt: new Date()
     };
-    
+
     this.paytrSettings.set(1, updatedSettings);
     console.log("PayTR ayarları güncellendi:", {
       merchantId: updatedSettings.merchantId,
@@ -611,10 +616,10 @@ export class MemStorage implements IStorage {
       merchantSaltLength: updatedSettings.merchantSalt.length,
       testMode: updatedSettings.testMode
     });
-    
+
     return updatedSettings;
   }
-  
+
   // PayTR Transaction operations
   async createPaytrTransaction(transaction: InsertPaytrTransaction): Promise<PaytrTransaction> {
     const id = this.paytrTransactionIdCounter++;
@@ -624,7 +629,7 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       updatedAt: new Date()
     };
-    
+
     this.paytrTransactions.set(id, newTransaction);
     console.log("PayTR işlemi kaydedildi:", {
       id: newTransaction.id,
@@ -633,41 +638,41 @@ export class MemStorage implements IStorage {
       amount: newTransaction.amount,
       status: newTransaction.status
     });
-    
+
     return newTransaction;
   }
-  
+
   async getPaytrTransaction(id: number): Promise<PaytrTransaction | undefined> {
     return this.paytrTransactions.get(id);
   }
-  
+
   async getPaytrTransactionByMerchantOid(merchantOid: string): Promise<PaytrTransaction | undefined> {
     return Array.from(this.paytrTransactions.values()).find(
       transaction => transaction.merchantOid === merchantOid
     );
   }
-  
+
   async updatePaytrTransactionStatus(id: number, status: string, responseData?: string): Promise<PaytrTransaction | undefined> {
     const existingTransaction = await this.getPaytrTransaction(id);
     if (!existingTransaction) return undefined;
-    
+
     const updatedTransaction: PaytrTransaction = {
       ...existingTransaction,
       status,
       responseData: responseData || existingTransaction.responseData,
       updatedAt: new Date()
     };
-    
+
     this.paytrTransactions.set(id, updatedTransaction);
     console.log("PayTR işlem durumu güncellendi:", {
       id,
       status,
       updatedAt: updatedTransaction.updatedAt
     });
-    
+
     return updatedTransaction;
   }
-  
+
   async getPaytrTransactionsByReservationId(reservationId: number): Promise<PaytrTransaction[]> {
     return Array.from(this.paytrTransactions.values()).filter(
       transaction => transaction.reservationId === reservationId
@@ -679,3 +684,29 @@ export class MemStorage implements IStorage {
 // Veritabanı depolamayı kullan
 import { DatabaseStorage } from "./storage/database-storage";
 export const storage = new DatabaseStorage();
+<<<<<<< HEAD
+=======
+
+import { db } from "./db";
+import { rooms as roomsTable } from "@shared/schema";
+import { eq } from "drizzle-orm";
+
+
+storage.updateRoomDailyPrices = updateRoomDailyPrices;
+
+async function updateRoomDailyPrices(roomId: number, dailyPrices: string): Promise<void> {
+  console.log("updateRoomDailyPrices ÇAĞRILDI:", { roomId, dailyPrices });
+
+  try {
+    await db.update(roomsTable)
+      .set({ dailyPrices })
+      .where(eq(roomsTable.id, roomId));
+
+    console.log("VERİTABANINA YAZILDI.");
+  } catch (error) {
+    console.error("updateRoomDailyPrices HATASI:", error);
+  }
+}
+
+storage.updateRoomDailyPrices = updateRoomDailyPrices;
+>>>>>>> cf41ac03 (23-05-2025-4)

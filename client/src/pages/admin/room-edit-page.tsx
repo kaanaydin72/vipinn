@@ -268,8 +268,17 @@ export default function RoomsEditPage() {
 
   // Form gönder
   const handleSubmit = (data: RoomFormValues) => {
-    updateRoomMutation.mutate({ ...data, dailyPrices: "" });
-  };
+  updateRoomMutation.mutate({
+    ...data,
+    dailyPrices: JSON.stringify(
+      Object.entries(gridPrices).map(([date, obj]) => ({
+        date,
+        price: obj.price ?? 0,
+        count: obj.count ?? 0,
+      }))
+    )
+  });
+};
 
   // Seçili gün(ler)
   const isSelected = (date: Date) => {
