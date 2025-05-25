@@ -158,15 +158,28 @@ export default function ReservationForm({ hotelId, room, onSuccess }: Reservatio
       return await res.json();
     },
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/reservations"] });
-      toast({
-        title: "Rezervasyon başarılı",
-        description: `${room.name} için rezervasyonunuz alındı.`,
-      });
-      if (onSuccess) onSuccess();
-      navigate("/reservations");
-    },
+    onSuccess: (data) => {
+  queryClient.invalidateQueries({ queryKey: ["/api/reservations"] });
+  
+  // Eğer ödeme linki varsa, otomatik yönlendir
+  if (data && data.paymentUrl) {
+    window.location.href = data.paymentUrl;
+    return;
+  }
+  if (data && data.iframeToken) {
+    // Eğer PayTR iframe kullanılıyorsa
+    window.location.href = `/odeme/paytr?token=${data.iframeToken}`;
+    return;
+  }
+
+  toast({
+    title: "Rezervasyon başarılı",
+    description: `${room.name} için rezervasyonunuz alındı.`,
+  });
+  if (onSuccess) onSuccess();
+  navigate("/reservations");
+},
+
     onError: (error) => {
       toast({
         title: "Rezervasyon hatası",

@@ -55,7 +55,10 @@ const generateToken = async (
   successUrl: string,
   failUrl: string
 ): Promise<{ token: string, paymentUrl: string }> => {
-  checkSettings();
+  const { merchantId, merchantKey, merchantSalt, testMode } = await getPaytrSettings();
+  console.log("PAYTR KULLANILAN MerchantId:", merchantId, "Key:", merchantKey.substring(0,4) + "...", "Salt:", merchantSalt.substring(0,4) + "...", "testMode:", testMode);
+
+
 
   const room = await storage.getRoom(reservation.roomId);
   if (!room) throw new Error('Oda bilgileri bulunamadı');
@@ -194,27 +197,21 @@ const verifyCallback = (params: Record<string, string>): boolean => {
 };
 
 // Diğer ayar fonksiyonları:
+// Diğer ayar fonksiyonları:
 const getPaytrSettings = async () => {
-  try {
-    const settings = await storage.getPaytrSettings();
-    if (!settings || !settings.merchantId || !settings.merchantKey || !settings.merchantSalt) {
-      return {
-        merchantId: MERCHANT_ID,
-        merchantKey: MERCHANT_KEY,
-        merchantSalt: MERCHANT_SALT,
-        testMode: process.env.NODE_ENV !== 'production'
-      };
-    }
-    return settings;
-  } catch (error) {
-    console.error('PayTR ayarları getirilemedi:', error);
-    return {
-      merchantId: MERCHANT_ID,
-      merchantKey: MERCHANT_KEY,
-      merchantSalt: MERCHANT_SALT,
-      testMode: process.env.NODE_ENV !== 'production'
-    };
+  // Sadece veritabanından ayarları çekiyoruz
+  const settings = await storage.getPaytrSettings();
+  if (!settings || !settings.merchantId || !settings.merchantKey || !settings.merchantSalt) {
+    throw new Error(
+      "PayTR ayarları veritabanında bulunamadı! Lütfen admin panelinden Merchant ID, Key ve Salt bilgisini girin."
+    );
   }
+  return {
+    merchantId: settings.merchantId,
+    merchantKey: settings.merchantKey,
+    merchantSalt: settings.merchantSalt,
+    testMode: !!settings.testMode
+  };
 };
 
 const updatePaytrSettings = async (

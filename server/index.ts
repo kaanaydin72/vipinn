@@ -55,6 +55,7 @@ app.use(helmet({
 
 // Statik dosyalar
 app.use(express.static(path.resolve(__dirname, "../dist/public")));
+app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
 
 // API route'ları
 registerRoutes(app);

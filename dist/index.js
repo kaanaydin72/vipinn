@@ -821,7 +821,8 @@ function generatePaytrToken(params) {
   return createHmac("sha256", MERCHANT_KEY).update(hash_str).digest("base64");
 }
 var generateToken = async (reservation, user, callbackUrl, userIp, successUrl, failUrl) => {
-  checkSettings();
+  const { merchantId, merchantKey, merchantSalt, testMode } = await getPaytrSettings();
+  console.log("PAYTR KULLANILAN MerchantId:", merchantId, "Key:", merchantKey.substring(0, 4) + "...", "Salt:", merchantSalt.substring(0, 4) + "...", "testMode:", testMode);
   const room = await storage.getRoom(reservation.roomId);
   if (!room) throw new Error("Oda bilgileri bulunamad\u0131");
   const hotel = await storage.getHotel(room.hotelId);
@@ -944,26 +945,18 @@ var verifyCallback = (params) => {
   return calculatedHash === hash;
 };
 var getPaytrSettings = async () => {
-  try {
-    const settings = await storage.getPaytrSettings();
-    if (!settings || !settings.merchantId || !settings.merchantKey || !settings.merchantSalt) {
-      return {
-        merchantId: MERCHANT_ID,
-        merchantKey: MERCHANT_KEY,
-        merchantSalt: MERCHANT_SALT,
-        testMode: process.env.NODE_ENV !== "production"
-      };
-    }
-    return settings;
-  } catch (error) {
-    console.error("PayTR ayarlar\u0131 getirilemedi:", error);
-    return {
-      merchantId: MERCHANT_ID,
-      merchantKey: MERCHANT_KEY,
-      merchantSalt: MERCHANT_SALT,
-      testMode: process.env.NODE_ENV !== "production"
-    };
+  const settings = await storage.getPaytrSettings();
+  if (!settings || !settings.merchantId || !settings.merchantKey || !settings.merchantSalt) {
+    throw new Error(
+      "PayTR ayarlar\u0131 veritaban\u0131nda bulunamad\u0131! L\xFCtfen admin panelinden Merchant ID, Key ve Salt bilgisini girin."
+    );
   }
+  return {
+    merchantId: settings.merchantId,
+    merchantKey: settings.merchantKey,
+    merchantSalt: settings.merchantSalt,
+    testMode: !!settings.testMode
+  };
 };
 var updatePaytrSettings = async (merchantId, merchantKey, merchantSalt, testMode) => {
   try {
@@ -1272,7 +1265,7 @@ var priceRulesRoutes = {
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-var uploadDir = path.resolve("dist/public/uploads");
+var uploadDir = path.resolve("uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -2095,7 +2088,7 @@ async function registerRoutes(app2) {
         userIp,
         baseUrl
       });
-      const paytrSettings2 = paytrService.getPaytrSettings();
+      const paytrSettings2 = await paytrService.getPaytrSettings();
       console.log("PayTR ayarlar\u0131:", {
         merchantIdSet: !!paytrSettings2.merchantId,
         merchantKeySet: !!paytrSettings2.merchantKey,
@@ -2673,6 +2666,7 @@ app.use(helmet({
   }
 }));
 app.use(express.static(path2.resolve(__dirname, "../dist/public")));
+app.use("/uploads", express.static(path2.resolve(__dirname, "../uploads")));
 registerRoutes(app);
 app.get("*", (req, res) => {
   res.sendFile(path2.resolve(__dirname, "../dist/public/index.html"));

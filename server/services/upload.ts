@@ -5,7 +5,7 @@ import { getPublicDir } from '../utils/paths';
 
 // Yükleme dizini
 //const uploadDir = path.join(getPublicDir(), 'uploads');
- const uploadDir = path.resolve('dist/public/uploads');
+ const uploadDir = path.resolve('uploads');
 
 // Dizinin var olduğundan emin olalım
 if (!fs.existsSync(uploadDir)) {

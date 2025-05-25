@@ -1102,7 +1102,7 @@ const reservation = await storage.createReservation(validatedData);
       });
 
       // PayTR ayarlarını kontrol et
-      const paytrSettings = paytrService.getPaytrSettings();
+      const paytrSettings = await paytrService.getPaytrSettings();
       console.log("PayTR ayarları:", {
         merchantIdSet: !!paytrSettings.merchantId,
         merchantKeySet: !!paytrSettings.merchantKey,
