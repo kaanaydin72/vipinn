@@ -39,22 +39,41 @@ export default function RoomCard({
   const deviceType = useDeviceType();
   const isMobile = deviceType === "mobile";
 
-  // Günlük fiyat ve kontenjan arrayleri
-  let dailyPricesArray: { date: string; price: number; count: number }[] = [];
-  let weekdayPricesArray: { dayIndex: number; price: number; count: number }[] = [];
 
-  try {
-    if (room.dailyPrices) {
-      dailyPricesArray = JSON.parse(room.dailyPrices);
-    }
-    if (room.weekdayPrices) {
-      weekdayPricesArray = JSON.parse(room.weekdayPrices);
-    }
-  } catch (e) {
-    dailyPricesArray = [];
-    weekdayPricesArray = [];
+// Günlük fiyat ve kontenjan arrayleri
+let dailyPricesArray: { date: string; price: number; count: number }[] = [];
+let weekdayPricesArray: { dayIndex: number; price: number; count: number }[] = [];
+let quotaMap: Record<string, number> = {};
+
+try {
+  if (room.dailyPrices) {
+    dailyPricesArray = JSON.parse(room.dailyPrices);
+  }
+  if (room.weekdayPrices) {
+    weekdayPricesArray = JSON.parse(room.weekdayPrices);
   }
 
+  if (Array.isArray(room.roomQuotas)) {
+    for (const q of room.roomQuotas) {
+      const dateStr = typeof q.date === "string" ? q.date.slice(0, 10) : new Date(q.date).toISOString().slice(0, 10);
+      quotaMap[dateStr] = q.count ?? q.quota ?? 0;
+    }
+
+    dailyPricesArray = dailyPricesArray.map(p => {
+      const dateStr = p.date.slice(0, 10);
+      return {
+        ...p,
+       count: quotaMap[dateStr] ?? 0,
+      };
+    });
+  }
+} catch (e) {
+  console.error("RoomCard parse error:", e);
+  dailyPricesArray = [];
+  weekdayPricesArray = [];
+}
+
+  
   // Rezervasyon aralığı/gece sayısı
   const dateRange = bookingInfo?.dateRange;
   // Gece sayısı: çıkış - giriş (aynı gün ise 0)
@@ -82,14 +101,15 @@ export default function RoomCard({
       if (found) {
         totalPrice += found.price;
         minAvailableCount = Math.min(minAvailableCount, found.count ?? 0);
-        if ((found.count ?? 0) <= 0) soldOutDay = true;
+      if ((found.count ?? 0) <= 0) soldOutDay = true;
+
       } else {
         const dayOfWeek = date.getDay();
         const weekly = weekdayPricesArray.find((p) => p.dayIndex === dayOfWeek);
         if (weekly) {
           totalPrice += weekly.price;
-          minAvailableCount = Math.min(minAvailableCount, weekly.count ?? 0);
-          if ((weekly.count ?? 0) <= 0) soldOutDay = true;
+         // minAvailableCount = dailyPricesArray[dailyPricesArray.length - 1].count ?? 0;
+         // if ((weekly.count ?? 0) <= 0) soldOutDay = true;
         } else {
           priceForAllDays = false;
           break;
@@ -100,14 +120,14 @@ export default function RoomCard({
   } else if (nightCount > 0) {
     if (dailyPricesArray.length > 0) {
       totalPrice = dailyPricesArray[dailyPricesArray.length - 1].price * nightCount;
-      minAvailableCount = dailyPricesArray[dailyPricesArray.length - 1].count ?? 0;
-      soldOutDay = (minAvailableCount <= 0);
+     // minAvailableCount = dailyPricesArray[dailyPricesArray.length - 1].count ?? 0;
+     // soldOutDay = (minAvailableCount <= 0);
     } else if (weekdayPricesArray.length > 0) {
       const today = new Date().getDay();
       const weekdayPriceObj = weekdayPricesArray.find((wp) => wp.dayIndex === today);
       totalPrice = (weekdayPriceObj?.price ?? 0) * nightCount;
-      minAvailableCount = weekdayPriceObj?.count ?? 0;
-      soldOutDay = (minAvailableCount <= 0);
+      //minAvailableCount = weekdayPriceObj?.count ?? 0;
+     // soldOutDay = (minAvailableCount <= 0);
     } else {
       priceForAllDays = false;
       minAvailableCount = 0;
@@ -153,7 +173,13 @@ export default function RoomCard({
   };
 
   // Oda tükendi veya gece sayısı sıfırsa
-  const roomSoldOut = soldOutDay || !priceForAllDays || minAvailableCount === 0 || nightCount < 1;
+  //const roomSoldOut = soldOutDay || !priceForAllDays || minAvailableCount === 0 || nightCount < 1;
+//const roomSoldOut = !priceForAllDays || nightCount < 1;
+const roomSoldOut = soldOutDay || !priceForAllDays || minAvailableCount === 0 || nightCount < 1;
+console.log("ROOM.ROOMQUOTAS", room.roomQuotas);
+console.log("QUOTA MAP", quotaMap);
+console.log("DAILY PRICES FINAL", dailyPricesArray);
+console.log("roomSoldOut?", roomSoldOut);
 
   return (
     <Card

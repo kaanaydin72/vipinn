@@ -1,6 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db, pool } from "./db"; // 👈 pool da geldi
 import { setupAuth } from "./auth";
 import { z } from "zod";
 import { insertHotelSchema, insertRoomSchema, insertReservationSchema, insertThemeSchema, insertHotelPolicySchema, insertPageContentSchema } from "@shared/schema";
@@ -215,9 +216,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/rooms", async (req, res) => {
     try {
       const rooms = await storage.getAllRooms();
-      // Artık takvim bazlı fiyatlandırma varsa sabit fiyatı 0 yapmıyoruz
-      // Kullanıcı arayüzünde, takvim fiyatları varsa onları, yoksa sabit fiyatı göstereceğiz
-      res.json(rooms);
+      const roomsWithQuotas = await Promise.all(
+      rooms.map(async (room) => {
+        const quotasResult = await pool.query(
+          "SELECT date, quota FROM room_quotas WHERE room_id = $1",
+          [room.id]
+        );
+
+        return {
+          ...room,
+          roomQuotas: quotasResult.rows,
+        };
+      })
+    );
+      res.json(roomsWithQuotas); 
     } catch (error) {
       console.error("Error fetching rooms:", error);
       res.status(500).json({ message: "Error fetching rooms", error: error instanceof Error ? error.message : String(error) });
@@ -236,22 +248,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/rooms/:id", async (req, res) => {
-    try {
-      const roomId = parseInt(req.params.id);
-      const room = await storage.getRoom(roomId);
+  
+app.get("/api/rooms/:id", async (req, res) => {
+  try {
+    const roomId = parseInt(req.params.id);
+    const room = await storage.getRoom(roomId);
 
-      if (!room) {
-        return res.status(404).json({ message: "Room not found" });
-      }
-
-      // Artık takvim bazlı fiyatlandırma varsa sabit fiyatı 0 yapmıyoruz
-      // Kullanıcı arayüzünde, takvim fiyatları varsa onları, yoksa sabit fiyatı göstereceğiz
-      res.json(room);
-    } catch (error) {
-      res.status(500).json({ message: "Error fetching room" });
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
     }
-  });
+
+    // room_quotas bilgilerini ekle
+    const quotaResult = await pool.query(
+      "SELECT date, quota FROM room_quotas WHERE room_id = $1",
+      [roomId]
+    );
+    room.roomQuotas = quotaResult.rows.map((r) => ({
+  date: r.date.toISOString().slice(0, 10),
+  count: r.quota,
+}));
+
+    res.json(room);
+  } catch (error) {
+    console.error("Room fetch error:", error);
+    res.status(500).json({ message: "Error fetching room" });
+  }
+});
+
+
+
 
   // Admin protected route to create a room
   app.post("/api/rooms", async (req, res) => {
@@ -317,6 +342,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+// ✅ Yeni endpoint: Admin room quota güncelleme
+app.put("/api/room-quotas/:roomId", async (req, res) => {
+  if (!req.isAuthenticated() || !req.user.isAdmin) {
+    return res.status(403).json({ message: "Unauthorized" });
+  }
+
+  const roomId = parseInt(req.params.roomId);
+  const quotas = req.body;
+
+  if (!Array.isArray(quotas)) {
+    return res.status(400).json({ message: "Invalid quota data" });
+  }
+
+  try {
+    await pool.query("DELETE FROM room_quotas WHERE room_id = $1", [roomId]);
+
+    for (const q of quotas) {
+      await pool.query(
+        "INSERT INTO room_quotas (room_id, date, quota) VALUES ($1, $2, $3)",
+        [roomId, q.date, q.quota ?? 0]
+      );
+    }
+
+    res.json({ success: true, message: "Room quotas updated." });
+  } catch (error) {
+    console.error("Room quota update error:", error);
+    res.status(500).json({ message: "Failed to update room quotas" });
+  }
+});
+
   // Admin protected route to update a room
   app.put("/api/rooms/:id", async (req, res) => {
     if (!req.isAuthenticated() || !req.user.isAdmin) {
@@ -332,7 +387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const hotel = await storage.getHotel(validatedData.hotelId);
         if (!hotel) {
           return res.status(400).json({ message: "Hotel not found" });
-        }
+      }
       }
 
       // Parse daily prices if provided
@@ -374,7 +429,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             // Standardize edilmiş tarihleri JSON string olarak kaydet
             validatedData.dailyPrices = JSON.stringify(normalizedDailyPrices);
-          }
+         
+            for (const p of normalizedDailyPrices) {
+            if (p.date && typeof p.count === "number") {
+            await pool.query(
+  `INSERT INTO room_quotas (room_id, date, quota)
+   VALUES ($1, $2, $3)
+   ON CONFLICT (room_id, date)
+   DO UPDATE SET quota = EXCLUDED.quota`,
+  [roomId, p.date, p.count]
+);
+
+
+         }
+       }  
+     }
         } catch (jsonError) {
           console.error("JSON parse error:", jsonError);
           return res.status(400).json({
@@ -590,32 +659,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Hotel not found" });
         }
         // Oda kontenjanını kontrol et!
-        const oda = await storage.getRoom(validatedData.roomId);
-        if (!oda || oda.roomCount <= 0) {
-          return res.status(400).json({ message: "Bu oda için müsaitlik yok!" });
-        }
+       // const oda = await storage.getRoom(validatedData.roomId);
+       // if (!oda || oda.roomCount <= 0) {
+         // return res.status(400).json({ message: "Bu oda için müsaitlik yok!" });
+       // }
 
         // Create reservation
         
-      const parsedDailyPrices = JSON.parse(validatedData.dailyPrices || '[]');
-      const selectedDates = [];
-      for (let d = new Date(validatedData.checkIn); d < new Date(validatedData.checkOut); d.setDate(d.getDate() + 1)) {
-        selectedDates.push(new Date(d).toISOString().slice(0, 10));
-      }
+      // Check-in → Check-out arası tüm tarihleri diziye al
+// const oda = await storage.getRoom(validatedData.roomId);
+// if (!oda || oda.roomCount <= 0) {
+//   return res.status(400).json({ message: "Bu oda için müsaitlik yok!" });
+// }
 
-      const updatedDailyPrices = parsedDailyPrices.map(p => {
-        if (selectedDates.includes(p.date.slice(0, 10))) {
-          return { ...p, count: Math.max((p.count ?? 0) - 1, 0) };
-        }
-        return p;
-      });
+// ✅ Kontenjan kontrolü (yeni sistem)
+const selectedDates = [];
+for (let d = new Date(validatedData.checkIn); d < new Date(validatedData.checkOut); d.setDate(d.getDate() + 1)) {
+  selectedDates.push(new Date(d).toISOString().slice(0, 10));
+}
 
-      console.log("GÜNCELLENEN dailyPrices JSON:", JSON.stringify(updatedDailyPrices, null, 2));
-      await storage.updateRoomDailyPrices(validatedData.roomId, JSON.stringify(updatedDailyPrices));
+const placeholders = selectedDates.map((_, i) => `$${i + 2}`).join(", ");
+const quotaResult = await pool.query(
+  `SELECT date, quota FROM room_quotas WHERE room_id = $1 AND date IN (${placeholders})`,
+  [validatedData.roomId, ...selectedDates]
+);
+
+const quotaMap = new Map(quotaResult.rows.map(r => [r.date.toISOString().slice(0,10), r.quota]));
+
+for (const date of selectedDates) {
+  const quota = quotaMap.get(date);
+  if (quota === undefined || quota <= 0) {
+    return res.status(400).json({ message: `Seçilen tarihte kontenjan yok: ${date}` });
+  }
+}
+
+for (const date of selectedDates) {
+  await pool.query(
+    `UPDATE room_quotas SET quota = quota - 1 WHERE room_id = $1 AND date = $2`,
+    [validatedData.roomId, date]
+  );
+}
 
 
-      const reservation = await storage.createReservation(validatedData);
-        await storage.decrementRoomCount(validatedData.roomId);
+const reservation = await storage.createReservation(validatedData);
 
         // Handle payment based on selected payment method
         if (validatedData.paymentMethod === "credit_card") {
@@ -1717,3 +1803,4 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   return httpServer;
 }
+

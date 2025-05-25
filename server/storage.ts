@@ -110,6 +110,8 @@ export class MemStorage implements IStorage {
   private paytrSettingsIdCounter: number;
   private paytrTransactionIdCounter: number;
 
+  dailyRoomQuotas: Map<string, number> = new Map();
+  
   sessionStore: Store;
 
   constructor() {
@@ -293,13 +295,34 @@ export class MemStorage implements IStorage {
   }
 
   // Room operations
-  async getRoom(id: number): Promise<Room | undefined> {
-    const room = this.rooms.get(id);
-    if (room) {
-      console.log(`Room retrieved: ID ${id}, dailyPrices: ${room.dailyPrices}, weekdayPrices: ${room.weekdayPrices}`);
+ // async getRoom(id: number): Promise<Room | undefined> {
+   // const room = this.rooms.get(id);
+   // if (room) {
+     // console.log(`Room retrieved: ID ${id}, dailyPrices: ${room.dailyPrices}, weekdayPrices: ${room.weekdayPrices}`);
+   // }
+   // return room;
+ // }
+
+
+//Room operations yeni hali
+async getRoom(id: number): Promise<Room | undefined> {
+  const room = this.rooms.get(id);
+  if (!room) return undefined;
+
+  const quotas: Record<string, number> = {};
+  for (const [key, value] of this.dailyRoomQuotas.entries()) {
+    const [roomIdStr, date] = key.split("-");
+    if (parseInt(roomIdStr) === id) {
+      quotas[date] = value;
     }
-    return room;
   }
+
+  return {
+    ...room,
+    roomQuotas: quotas
+  } as any; // Type hatasını önlemek için geçici çözüm
+}
+
 
   async getRoomsByHotel(hotelId: number): Promise<Room[]> {
     return Array.from(this.rooms.values()).filter(room => room.hotelId === hotelId);
@@ -367,6 +390,26 @@ export class MemStorage implements IStorage {
       paymentStatus: "pending",
       paymentId: null
     };
+    
+
+
+if (reservation.dates && Array.isArray(reservation.dates)) {
+  for (const date of reservation.dates) {
+    const key = `${reservation.roomId}-${date}`;
+    const quota = this.dailyRoomQuotas.get(key) ?? 0;
+    if (quota <= 0) {
+      throw new Error(`Yetersiz kontenjan: ${date}`);
+    }
+  }
+
+  for (const date of reservation.dates) {
+    const key = `${reservation.roomId}-${date}`;
+    const quota = this.dailyRoomQuotas.get(key) ?? 0;
+    this.dailyRoomQuotas.set(key, quota - 1);
+  }
+}
+
+
     this.reservations.set(id, newReservation);
 
     // Oluşturulan rezervasyonu logla ve rezervasyon sayısını kontrol et
@@ -684,8 +727,6 @@ export class MemStorage implements IStorage {
 // Veritabanı depolamayı kullan
 import { DatabaseStorage } from "./storage/database-storage";
 export const storage = new DatabaseStorage();
-<<<<<<< HEAD
-=======
 
 import { db } from "./db";
 import { rooms as roomsTable } from "@shared/schema";
@@ -709,4 +750,3 @@ async function updateRoomDailyPrices(roomId: number, dailyPrices: string): Promi
 }
 
 storage.updateRoomDailyPrices = updateRoomDailyPrices;
->>>>>>> cf41ac03 (23-05-2025-4)

@@ -1,6 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
 import { setupAuth } from "./auth";
 import { z } from "zod";
 import { insertHotelSchema, insertRoomSchema, insertReservationSchema, insertThemeSchema, insertHotelPolicySchema, insertPageContentSchema } from "@shared/schema";
@@ -374,7 +375,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             // Standardize edilmiş tarihleri JSON string olarak kaydet
             validatedData.dailyPrices = JSON.stringify(normalizedDailyPrices);
-          }
+         
+            for (const p of normalizedDailyPrices) {
+            if (p.date && typeof p.count === "number") {
+            await storage.query(
+  `INSERT INTO room_quotas (room_id, date, quota)
+   VALUES ($1, $2, $3)
+   ON CONFLICT (room_id, date)
+   DO UPDATE SET quota = EXCLUDED.quota`,
+  [roomId, p.date, p.count]
+);
+
+         }
+       }  
+     }
         } catch (jsonError) {
           console.error("JSON parse error:", jsonError);
           return res.status(400).json({
@@ -590,37 +604,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Hotel not found" });
         }
         // Oda kontenjanını kontrol et!
-if (!oda) {
-  return res.status(400).json({ message: "Oda bulunamadı!" });
-}
-
-let dailyPrices = [];
-try {
-  dailyPrices = JSON.parse(oda.dailyPrices || '[]');
-} catch {}
-
-const selectedDates = [];
-for (
-  let d = new Date(validatedData.checkIn);
-  d < new Date(validatedData.checkOut);
-  d.setDate(d.getDate() + 1)
-) {
-  selectedDates.push(new Date(d).toISOString().slice(0, 10));
-}
-
-const uygunMu = selectedDates.every(date => {
-  const found = dailyPrices.find(p => p.date === date);
-  return found && (found.count ?? 0) > 0;
-});
-
-if (!uygunMu) {
-  return res.status(400).json({ message: "Bu oda için müsaitlik yok!" });
-}
+        const oda = await storage.getRoom(validatedData.roomId);
+        if (!oda || oda.roomCount <= 0) {
+          return res.status(400).json({ message: "Bu oda için müsaitlik yok!" });
+        }
 
         // Create reservation
         
       const parsedDailyPrices = JSON.parse(validatedData.dailyPrices || '[]');
-      
+      const selectedDates = [];
+      for (let d = new Date(validatedData.checkIn); d < new Date(validatedData.checkOut); d.setDate(d.getDate() + 1)) {
+        selectedDates.push(new Date(d).toISOString().slice(0, 10));
+      }
 
       const updatedDailyPrices = parsedDailyPrices.map(p => {
         if (selectedDates.includes(p.date.slice(0, 10))) {
@@ -1736,3 +1731,4 @@ if (!uygunMu) {
 
   return httpServer;
 }
+

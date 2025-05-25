@@ -63,7 +63,7 @@ export default function RoomsEditPage() {
 
   // Masaüstü Grid Takvim için state
   const [month, setMonth] = useState(startOfMonth(new Date()));
-  const [gridPrices, setGridPrices] = useState<{ [date: string]: { price: number; count: number } }>({});
+  const [gridPrices, setGridPrices] = useState<{ [date: string]: { price: number; quota: number } }>({});
   const [selectedRange, setSelectedRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null });
   const [quickPrice, setQuickPrice] = useState<number>(0);
   const [quickCount, setQuickCount] = useState<number>(0);
@@ -77,7 +77,7 @@ export default function RoomsEditPage() {
   const { data: hotels = [] } = useQuery<Hotel[]>({ queryKey: ['/api/hotels'] });
 
   // Oda detayını çek
-  const { data: room } = useQuery<Room>({
+  const { data: room } = useQuery<any>({
     queryKey: ['/api/rooms', params?.id],
     queryFn: async () => {
       if (!params?.id) throw new Error("ID yok");
@@ -114,14 +114,31 @@ export default function RoomsEditPage() {
     }
     setImages(parsedImages.length > 0 ? parsedImages : (room.imageUrl ? [{ url: room.imageUrl, filename: room.imageUrl.split("/").pop() || "", isMain: true }] : []));
     // Günlük fiyat/kontenjanları grid'e aktar
-    let parsedDailyPrices: DailyPrice[] = [];
-    try {
-      parsedDailyPrices = room.dailyPrices ? JSON.parse(room.dailyPrices) : [];
-    } catch { parsedDailyPrices = []; }
-    let gridObj: { [date: string]: { price: number; count: number } } = {};
-    parsedDailyPrices.forEach(dp => {
-      gridObj[dp.date] = { price: dp.price, count: dp.count ?? 0 };
-    });
+let parsedDailyPrices: DailyPrice[] = [];
+try {
+  parsedDailyPrices = room.dailyPrices ? JSON.parse(room.dailyPrices) : [];
+} catch { parsedDailyPrices = []; }
+
+// Yeni quotaMap tablosundan da ekle
+const quotaMap: Record<string, number> = {};
+if (Array.isArray(room.roomQuotas)) {
+  room.roomQuotas.forEach((q: any) => {
+    quotaMap[q.date] = q.count ?? 0;
+
+  });
+}
+
+let gridObj: { [date: string]: { price: number; count: number } } = {};
+parsedDailyPrices.forEach(dp => {
+  const dateStr = dp.date.slice(0, 10);
+  gridObj[dateStr] = {
+    price: dp.price,
+    count: quotaMap[dateStr] ?? dp.count ?? 0
+  };
+});
+    
+
+
     setGridPrices(gridObj);
     form.reset({
       hotelId: room.hotelId,
@@ -131,7 +148,8 @@ export default function RoomsEditPage() {
       imageUrl: room.imageUrl,
       features: room.features,
       type: typeValue,
-    });
+      room_count: room.room_count,    
+      });
   }, [room]);
 
   // Resim işlemleri
@@ -198,8 +216,8 @@ export default function RoomsEditPage() {
       w = [];
     }
   }
-  const getCell = (date: Date) => gridPrices[format(date, "yyyy-MM-dd")] || { price: 0, count: 0 };
-  const setCell = (date: Date, key: "price" | "count", val: number) => {
+const getCell = (date: Date) => gridPrices[format(date, "yyyy-MM-dd")] || { price: 0, quota: 0 };
+  const setCell = (date: Date, key: "price" | "quota", val: number) => {
     const d = format(date, "yyyy-MM-dd");
     setGridPrices(g => ({ ...g, [d]: { ...g[d], [key]: val } }));
   };
@@ -220,40 +238,51 @@ export default function RoomsEditPage() {
   };
 
   // Toplu güncelleme
-  const applyBulk = () => {
-    if (!selectedRange.from || !selectedRange.to) {
-      toast({ title: "Tarih aralığı seçin!", variant: "destructive" });
-      return;
-    }
-    let cur = selectedRange.from;
-    while (cur <= selectedRange.to) {
-      const dStr = format(cur, "yyyy-MM-dd");
-      setGridPrices(g => ({
-        ...g,
-        [dStr]: {
-          price: quickPrice,
-          count: quickCount,
-        },
-      }));
-      cur = addDays(cur, 1);
-    }
-    toast({ title: "Toplu güncelleme yapıldı" });
-  };
+const applyBulk = () => {
+  if (!selectedRange.from || !selectedRange.to) {
+    toast({ title: "Tarih aralığı seçin!", variant: "destructive" });
+    return;
+  }
+  let cur = selectedRange.from;
+  while (cur <= selectedRange.to) {
+    const dStr = format(cur, "yyyy-MM-dd");
+    setGridPrices((g) => ({
+      ...g,
+      [dStr]: {
+        price: quickPrice,
+        quota: quickCount, // ✅ yeni: quota
+      },
+    }));
+    cur = addDays(cur, 1);
+  }
+  toast({ title: "Toplu güncelleme yapıldı" });
+};
+  
+
 
   // Oda güncelleme mutation
   const updateRoomMutation = useMutation({
     mutationFn: async (data: RoomFormValues & { dailyPrices: string }) => {
       if (!data.imageUrl) throw new Error('Lütfen en az bir resim yükleyin ve ana resim olarak işaretleyin.');
       const imagesData = images.map(img => ({ url: img.url, filename: img.filename, isMain: img.isMain }));
-      const response = await apiRequest("PUT", `/api/rooms/${params?.id}`, {
+     
+        const response = await apiRequest("PUT", `/api/rooms/${params?.id}`, {
         ...data,
         dailyPrices: JSON.stringify(Object.entries(gridPrices).map(([date, obj]) => ({
           date,
           price: obj.price ?? 0,
-          count: obj.count ?? 0,
         }))),
+        room_count: Math.max(...Object.values(gridPrices).map(p => p.quota ?? 0)),
         images: JSON.stringify(imagesData),
       });
+
+ await apiRequest("PUT", `/api/room-quotas/${params?.id}`, 
+    Object.entries(gridPrices).map(([date, obj]) => ({
+      date,
+      quota: obj.quota ?? 0,
+    }))
+  );
+
       return await response.json();
     },
     onSuccess: () => {
@@ -274,7 +303,6 @@ export default function RoomsEditPage() {
       Object.entries(gridPrices).map(([date, obj]) => ({
         date,
         price: obj.price ?? 0,
-        count: obj.count ?? 0,
       }))
     )
   });
