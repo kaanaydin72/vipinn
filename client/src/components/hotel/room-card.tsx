@@ -246,15 +246,18 @@ console.log("roomSoldOut?", roomSoldOut);
                         {nightCount > 1 && " (Toplam)"}
                       </span>
                     </div>
-                    <div className="text-xs text-neutral-600 font-medium mb-1">
-                      {minAvailableCount > 0 && minAvailableCount <= 5 ? (
-                        <span className="text-red-500 font-semibold animate-pulse">
-                          Son {minAvailableCount} oda!
-                        </span>
-                      ) : (
-                        <>Seçilen günlerde kontenjan: <span className="font-bold">{minAvailableCount}</span> oda</>
-                      )}
-                    </div>
+                    
+               <div className="text-xs text-neutral-600 font-medium mb-1">
+                {minAvailableCount > 0 && minAvailableCount <= 5 && (
+               <span className="text-red-500 font-semibold animate-pulse">
+                Son {minAvailableCount} oda!
+                </span>
+                 )}
+             </div>
+
+
+
+
                     <div className="text-xs text-neutral-500 flex items-center mt-1">
                       {nightCount > 0 ? (
                         <>

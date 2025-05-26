@@ -37,6 +37,8 @@ export default function RoomList({
   onRoomSelect,
   previewImages
 }: RoomListProps) {
+console.log("ROOMS", rooms);
+  console.log("İLK ODA", rooms[0]);
   
   // Odaları tipine göre grupla
   const roomsByType: Record<string, Room[]> = rooms.reduce((acc, room) => {
